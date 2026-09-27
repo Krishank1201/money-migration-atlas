@@ -14,6 +14,13 @@ from app.core.schemas import (
     LaunderingPattern
 )
 from app.graph.store import GraphStore
+from collections import namedtuple
+
+
+class SyntheticDataset(namedtuple("SyntheticDataset", ["vasps", "wallets", "transactions", "benchmark_cases"])):
+    @property
+    def test_cases(self):
+        return self.benchmark_cases
 
 
 # Seed VASPs (FIU-IND Indian and Overseas)
@@ -479,7 +486,7 @@ class SyntheticDataGenerator:
         # 4. Generate background network of normal & suspicious activity
         self._generate_background_traffic(target_wallets=550, target_txs=2200)
 
-        return (
+        return SyntheticDataset(
             list(self.vasps.values()),
             list(self.wallets.values()),
             list(self.transactions.values()),
@@ -1139,3 +1146,8 @@ def generate_synthetic_data(seed: int = 42, store: Optional[GraphStore] = None) 
     if store is not None:
         generator.populate_store(store)
     return vasps, wallets, transactions, test_cases
+
+
+# Backward-compatible alias for prompt specifications
+SyntheticGenerator = SyntheticDataGenerator
+

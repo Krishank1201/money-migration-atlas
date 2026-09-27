@@ -12,24 +12,41 @@ from app.graph.store import GraphStore
 from app.data.synthetic_generator import generate_synthetic_data
 from app.api.v1.demo import router as demo_router, set_demo_context
 from app.api.v1.fetcher import router as fetcher_router, set_fetch_orchestrator
+from app.api.v1.graph import router as graph_router, set_graph_context
+from app.api.v1.admin import router as admin_router, set_admin_context
 from app.fetchers.orchestrator import FetchOrchestrator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("mma")
 
-# Global active graph store and fetch orchestrator
+# Global active graph store, backends, and orchestrator
 active_graph_store: GraphStore = None
+nx_store: NetworkXStore = None
+neo4j_store: Neo4jStore = None
 fetch_orchestrator: FetchOrchestrator = None
 benchmark_cases = []
 
 
+def on_store_switched(new_store: GraphStore):
+    """Callback triggered by admin router when graph store is switched."""
+    global active_graph_store, fetch_orchestrator, benchmark_cases
+    active_graph_store = new_store
+    set_demo_context(new_store, benchmark_cases)
+    set_graph_context(new_store, fetch_orchestrator)
+    if fetch_orchestrator:
+        fetch_orchestrator.graph_store = new_store
+    logger.info("Active store propagated to all modules: %s", new_store.__class__.__name__)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global active_graph_store, fetch_orchestrator, benchmark_cases
+    global active_graph_store, nx_store, neo4j_store, fetch_orchestrator, benchmark_cases
     settings = get_settings()
-    logger.info("Initializing %s (DEMO_MODE=%s, SEED=%s)", settings.APP_NAME, settings.DEMO_MODE, settings.RANDOM_SEED)
+    logger.info("Initializing %s (DEMO_MODE=%s, SEED=%s, BACKEND=%s)", 
+                settings.APP_NAME, settings.DEMO_MODE, settings.RANDOM_SEED, settings.GRAPH_BACKEND)
 
-    # 1. Attempt Neo4j connection reachability check
+    # 1. Initialize both graph store backends
+    nx_store = NetworkXStore()
     neo4j_store = Neo4jStore(
         uri=settings.NEO4J_URI,
         user=settings.NEO4J_USER,
@@ -38,21 +55,28 @@ async def lifespan(app: FastAPI):
         timeout=settings.NEO4J_TIMEOUT_SECONDS
     )
 
-    if not settings.DEMO_MODE and neo4j_store.is_available():
-        logger.info("Using Neo4j graph store backend")
+    # Determine initial active store based on configuration and availability
+    if settings.GRAPH_BACKEND.lower() == "neo4j" and neo4j_store.is_available():
+        logger.info("Using Neo4j graph store backend as configured.")
         active_graph_store = neo4j_store
     else:
-        logger.info("Using high-performance in-memory NetworkX graph store backend")
-        active_graph_store = NetworkXStore()
+        logger.info("Using high-performance in-memory NetworkX graph store backend.")
+        active_graph_store = nx_store
 
-    # 2. Populate with synthetic data in DEMO_MODE
+    # 2. Populate synthetic data in DEMO_MODE
     if settings.DEMO_MODE:
         logger.info("Generating deterministic synthetic crypto graph...")
+        # Always populate NetworkX store as reliable baseline
         vasps, wallets, transactions, benchmark_cases = generate_synthetic_data(
             seed=settings.RANDOM_SEED,
-            store=active_graph_store
+            store=nx_store
         )
-        set_demo_context(active_graph_store, benchmark_cases)
+        # If Neo4j is active and reachable, populate it as well
+        if active_graph_store is neo4j_store and neo4j_store.is_available():
+            for v in vasps:
+                neo4j_store.add_vasp(v)
+            neo4j_store.bulk_ingest(wallets, transactions)
+
         logger.info(
             "Synthetic graph ready: %d VASPs, %d wallets, %d transactions, %d benchmark cases loaded.",
             len(vasps), len(wallets), len(transactions), len(benchmark_cases)
@@ -60,13 +84,18 @@ async def lifespan(app: FastAPI):
 
     # 3. Initialize FetchOrchestrator
     fetch_orchestrator = FetchOrchestrator(graph_store=active_graph_store)
+
+    # 4. Bind contexts
+    set_demo_context(active_graph_store, benchmark_cases)
     set_fetch_orchestrator(fetch_orchestrator)
+    set_graph_context(active_graph_store, fetch_orchestrator)
+    set_admin_context(nx_store, neo4j_store, active_graph_store, on_store_switched)
 
     yield
 
     # Teardown
-    if isinstance(active_graph_store, Neo4jStore):
-        active_graph_store.close()
+    if neo4j_store:
+        neo4j_store.close()
 
 
 app = FastAPI(
@@ -88,6 +117,8 @@ app.add_middleware(
 # Mount API routers
 app.include_router(demo_router, prefix="/api/v1")
 app.include_router(fetcher_router, prefix="/api/v1")
+app.include_router(graph_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["System"])

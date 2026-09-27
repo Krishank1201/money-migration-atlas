@@ -37,7 +37,7 @@ A foundational requirement for SIH26182 court admissibility is **strict score se
 | :--- | :--- | :--- |
 | **Phase 1** | **Project Scaffold + Synthetic Data Generator**: Dual-engine GraphStore (Neo4j + NetworkX), deterministic seed generator, 9 VASPs, 550+ wallets, 2200+ transactions, 12 ground-truth benchmarks, health check. | **Completed** |
 | **Phase 2** | **Multi-Chain Blockchain Fetcher**: Provider abstraction for BTC (Blockchair), ETH/ERC-20 (Etherscan), TRC-20 (TronGrid) with SHA-256 file caching, resilient fallback, and DEMO_MODE toggle. | **Completed** |
-| **Phase 3** | **Graph Construction & Neo4j Integration**: Full Cypher synchronization, APOC-accelerated graph projections, and multi-hop neighborhood expansion. | *Upcoming* |
+| **Phase 3** | **Graph Construction & Neo4j Integration**: Full Cypher synchronization, APOC-accelerated graph projections, UNWIND bulk ingestion, multi-hop live ingestion, and topological analytics. | **Completed** |
 | **Phase 4** | **Baseline ML & Feature Engineering**: Tabular graph feature extraction (in/out degree, turnover velocity, peeling indicators) and XGBoost baseline. | *Upcoming* |
 | **Phase 5** | **Graph Neural Network (GNN)**: PyTorch Geometric GraphSAGE / GATv2 architecture predicting wallet-to-VASP attribution probabilities. | *Upcoming* |
 | **Phase 6** | **Behavioral Fingerprinting & Adversarial Self-Play**: Temporal timing analysis, gas price profiling, and Red AI (laundering generator) vs. Blue AI (detection). | *Upcoming* |
@@ -133,6 +133,39 @@ python -m uvicorn app.main:app --reload --port 8000
 
 ### 5. Verify Health & Demo Endpoints
 - **Health Check**: `GET http://localhost:8000/health`
+- **Graph Statistics & Degree Distribution**: `GET http://localhost:8000/api/v1/graph/stats`
 - **List Benchmark Cases**: `GET http://localhost:8000/api/v1/demo/test-cases`
 - **Evaluate Proximity**: `GET http://localhost:8000/api/v1/demo/benchmark/CASE-001/proximity`
+- **Extract Ego Subgraph**: `GET http://localhost:8000/api/v1/graph/subgraph/ETH/0x...`
 - **Interactive OpenAPI Docs**: `http://localhost:8000/docs`
+
+---
+
+## 6. Graph Backend Selection (NetworkX & Neo4j Dual Engine)
+
+Money Migration Atlas implements a resilient **Dual-Engine Graph Architecture**:
+- **NetworkX (Default)**: In-memory multi-directed graph store. Zero external dependencies, starts in < 1 second, and powers fully reproducible offline hackathon presentations.
+- **Neo4j (Production / Scale)**: Enterprise graph database with persistent Bolt connection, Cypher queries, UNWIND bulk ingestion, and APOC / Graph Data Science plugin support.
+
+Both engines implement the identical `GraphStore` interface and produce **exact parity** across all 12 benchmark cases.
+
+### Starting Neo4j (Optional)
+```bash
+# Start Neo4j 5.x container with APOC and GDS
+docker compose up -d neo4j
+```
+
+### Dynamic Backend Switching Without Restart
+Switch live between NetworkX and Neo4j at runtime via the Admin API:
+```bash
+# Inspect currently active store
+curl http://localhost:8000/api/v1/admin/active-store
+
+# Switch to Neo4j
+curl -X POST "http://localhost:8000/api/v1/admin/switch-store?backend=neo4j"
+
+# Switch back to NetworkX
+curl -X POST "http://localhost:8000/api/v1/admin/switch-store?backend=networkx"
+```
+If Neo4j is offline or unreachable, the system gracefully falls back to NetworkX without crashing.
+

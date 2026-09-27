@@ -131,3 +131,43 @@ class FetchResult(BaseModel):
     balance: float = 0.0
     cached_at: Optional[int] = None
     error_message: Optional[str] = None
+
+
+class SubgraphResponse(BaseModel):
+    """Ego-subgraph around a center address for visualization."""
+    center_address: str
+    chain: Chain
+    hops: int
+    nodes: List[Dict[str, Any]] = Field(default_factory=list)
+    edges: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class IngestionReport(BaseModel):
+    """Summary of graph ingestion operation."""
+    wallets_added: int = 0
+    txs_added: int = 0
+    duration_ms: float = 0.0
+    source: str = Field(..., description="Data source identifier ('synthetic', 'live', 'benchmark')")
+
+
+class NearestVASPCandidate(BaseModel):
+    """Candidate VASP identified via topological traversal."""
+    vasp_id: str
+    vasp_name: str
+    proximity_rank: int = Field(..., description="Graph distance in hops to VASP-controlled address")
+    distance: float = Field(default=0.0, description="Cumulative edge traversal weight")
+    target_wallet: Optional[str] = None
+    path: List[str] = Field(default_factory=list)
+    tx_hashes: List[str] = Field(default_factory=list)
+    chain_path: List[str] = Field(default_factory=list)
+    fiu_ind_registered: bool = False
+    confidence_score: Optional[float] = None
+    confidence_tier: ConfidenceTier = ConfidenceTier.UNKNOWN
+
+
+class AnalyticsResponse(BaseModel):
+    """Topological graph analytics report."""
+    degree_distribution: Dict[str, Any] = Field(default_factory=dict)
+    top_central_wallets: List[Dict[str, Any]] = Field(default_factory=list)
+    mixer_candidates: List[Dict[str, Any]] = Field(default_factory=list)
+

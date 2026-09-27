@@ -199,13 +199,25 @@ class NetworkXStore(GraphStore):
         return {"nodes": nodes_list, "edges": edges_list}
 
     def stats(self) -> Dict[str, Any]:
+        chain_dist: Dict[str, int] = {}
+        for w in self.wallets.values():
+            c = w.chain.value if hasattr(w.chain, "value") else str(w.chain)
+            chain_dist[c] = chain_dist.get(c, 0) + 1
+            
+        vasp_dist: Dict[str, int] = {}
+        for w in self.wallets.values():
+            if w.vasp_id:
+                vasp_dist[w.vasp_id] = vasp_dist.get(w.vasp_id, 0) + 1
+
         return {
             "backend": "networkx",
             "node_count": self.graph.number_of_nodes(),
             "edge_count": self.graph.number_of_edges(),
             "vasp_count": len(self.vasps),
             "wallet_count": len(self.wallets),
-            "transaction_count": len(self.transactions)
+            "transaction_count": len(self.transactions),
+            "chain_distribution": chain_dist,
+            "vasp_distribution": vasp_dist
         }
 
     def clear(self) -> None:

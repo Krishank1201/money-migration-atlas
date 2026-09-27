@@ -21,6 +21,14 @@ class GraphStore(ABC):
         """Add a directed transaction edge."""
         pass
 
+    def bulk_ingest(self, wallets: List[Wallet], transactions: List[Transaction]) -> None:
+        """Bulk ingest wallets and transactions."""
+        for w in wallets:
+            self.add_wallet(w)
+        for tx in transactions:
+            self.add_transaction(tx)
+
+
     @abstractmethod
     def get_wallet(self, address: str) -> Optional[Wallet]:
         """Fetch wallet metadata by address."""

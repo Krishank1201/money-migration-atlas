@@ -26,7 +26,11 @@ class Settings(BaseSettings):
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "password"
     NEO4J_DATABASE: str = "neo4j"
-    NEO4J_TIMEOUT_SECONDS: float = 1.5
+    NEO4J_TIMEOUT_SECONDS: float = 3.0
+    GRAPH_BACKEND: str = "networkx"
+    NEO4J_FALLBACK_TO_NETWORKX: bool = True
+    GRAPH_DEFAULT_HOPS: int = 3
+    GRAPH_MAX_HOPS: int = 8
 
     # Blockchain Provider API Keys
     ETHERSCAN_API_KEY: Optional[str] = None

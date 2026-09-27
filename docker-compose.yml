@@ -5,13 +5,20 @@ services:
     image: neo4j:5.18.0
     container_name: mma-neo4j
     ports:
-      - "7474:7474" # HTTP
-      - "7687:7687" # Bolt
+      - "7474:7474" # HTTP Browser
+      - "7687:7687" # Bolt Protocol
     environment:
-      - NEO4J_AUTH=neo4j/password
+      - NEO4J_AUTH=${NEO4J_AUTH:-neo4j/password}
       - NEO4J_PLUGINS=["apoc", "graph-data-science"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
     volumes:
       - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
 volumes:
