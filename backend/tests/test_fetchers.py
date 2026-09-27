@@ -1,7 +1,5 @@
 import pytest
 import time
-import shutil
-from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.schemas import Chain, DataSource, FetchResult, Transaction
@@ -12,6 +10,11 @@ from app.fetchers.cache import FileCache
 from app.fetchers.orchestrator import FetchOrchestrator
 from app.config import get_settings
 from app.main import app
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
 
 
 @pytest.fixture
@@ -57,7 +60,8 @@ async def test_btc_provider_parsing(httpx_mock):
 
     httpx_mock.add_response(
         url=f"https://api.blockchair.com/bitcoin/dashboards/address/{address}",
-        json=mock_blockchair
+        json=mock_blockchair,
+        is_reusable=True
     )
 
     provider = BitcoinProvider(timeout=5)
@@ -115,16 +119,19 @@ async def test_eth_provider_parsing(httpx_mock):
     }
 
     httpx_mock.add_response(
-        url=f"https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest",
-        json=mock_balance
+        url=f"https://api.etherscan.io/v2/api?module=account&action=balance&address={address}&tag=latest&chainid=1",
+        json=mock_balance,
+        is_reusable=True
     )
     httpx_mock.add_response(
-        url=f"https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc",
-        json=mock_txlist
+        url=f"https://api.etherscan.io/v2/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&chainid=1",
+        json=mock_txlist,
+        is_reusable=True
     )
     httpx_mock.add_response(
-        url=f"https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc",
-        json=mock_tokentx
+        url=f"https://api.etherscan.io/v2/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&chainid=1",
+        json=mock_tokentx,
+        is_reusable=True
     )
 
     provider = EthereumProvider(timeout=5)
@@ -164,15 +171,18 @@ async def test_tron_provider_parsing(httpx_mock):
 
     httpx_mock.add_response(
         url=f"https://api.trongrid.io/v1/accounts/{address}",
-        json=mock_account
+        json=mock_account,
+        is_reusable=True
     )
     httpx_mock.add_response(
         url=f"https://api.trongrid.io/v1/accounts/{address}/transactions/trc20?limit=50",
-        json=mock_trc20
+        json=mock_trc20,
+        is_reusable=True
     )
     httpx_mock.add_response(
         url=f"https://api.trongrid.io/v1/accounts/{address}/transactions?limit=50",
-        json={"data": []}
+        json={"data": []},
+        is_reusable=True
     )
 
     provider = TronProvider(timeout=5)
@@ -188,13 +198,12 @@ async def test_tron_provider_parsing(httpx_mock):
 
 @pytest.mark.anyio
 async def test_orchestrator_fallback_on_provider_error(temp_cache, monkeypatch):
-    """Test: Orchestrator falls back to synthetic when provider raises without crashing."""
+    """Test: Orchestrator falls back to synthetic_fallback when provider raises without crashing."""
     settings = get_settings()
     monkeypatch.setattr(settings, "DEMO_MODE", False)
 
     orchestrator = FetchOrchestrator(cache=temp_cache)
 
-    # Force provider to raise an exception
     async def broken_fetch(addr, limit=100):
         raise ConnectionError("Simulated Network Failure")
 
@@ -203,7 +212,110 @@ async def test_orchestrator_fallback_on_provider_error(temp_cache, monkeypatch):
     result = await orchestrator.fetch_wallet("bc1qfailedaddress", Chain.BTC)
 
     assert result is not None
-    assert result.data_source == DataSource.SYNTHETIC.value
+    assert result.data_source == DataSource.SYNTHETIC_FALLBACK.value
+    assert len(result.transactions) > 0
+    assert "Live provider error" in (result.error_message or "")
+
+
+@pytest.mark.anyio
+async def test_eth_provider_raises_on_missing_api_key(httpx_mock):
+    """Test: ETH provider raises ProviderError on Etherscan status == '0'."""
+    from app.fetchers.base import ProviderError
+    address = "0x71c67d8e1c39e08736602382d625114498ca78a0"
+
+    mock_error_resp = {
+        "status": "0",
+        "message": "NOTOK",
+        "result": "Missing/Invalid API Key"
+    }
+
+    httpx_mock.add_response(
+        url=f"https://api.etherscan.io/v2/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&chainid=1",
+        json=mock_error_resp,
+        is_reusable=True
+    )
+
+    provider = EthereumProvider(timeout=5)
+    with pytest.raises(ProviderError) as exc_info:
+        await provider.get_wallet_transactions(address)
+
+    assert "Missing/Invalid API Key" in str(exc_info.value)
+    assert exc_info.value.provider == "EthereumProvider"
+
+
+@pytest.mark.anyio
+async def test_btc_provider_raises_on_blockchair_error(httpx_mock):
+    """Test: BTC provider raises ProviderError when Blockchair reports context error."""
+    from app.fetchers.base import ProviderError
+    address = "bc1qinvalidaddress999"
+
+    mock_error_resp = {
+        "data": {},
+        "context": {
+            "code": 404,
+            "error": "Address not found or invalid"
+        }
+    }
+
+    httpx_mock.add_response(
+        url=f"https://api.blockchair.com/bitcoin/dashboards/address/{address}",
+        json=mock_error_resp,
+        is_reusable=True
+    )
+
+    provider = BitcoinProvider(timeout=5)
+    with pytest.raises(ProviderError) as exc_info:
+        await provider.get_wallet_transactions(address)
+
+    assert "Address not found or invalid" in str(exc_info.value)
+    assert exc_info.value.provider == "BitcoinProvider"
+
+
+@pytest.mark.anyio
+async def test_tron_provider_raises_on_failure(httpx_mock):
+    """Test: Tron provider raises ProviderError when TronGrid reports success == False."""
+    from app.fetchers.base import ProviderError
+    address = "TInvalidTronAddress999"
+
+    mock_failure_resp = {
+        "success": False,
+        "error": "class java.lang.NullPointerException"
+    }
+
+    httpx_mock.add_response(
+        url=f"https://api.trongrid.io/v1/accounts/{address}/transactions/trc20?limit=50",
+        json=mock_failure_resp,
+        is_reusable=True
+    )
+
+    provider = TronProvider(timeout=5)
+    with pytest.raises(ProviderError) as exc_info:
+        await provider.get_wallet_transactions(address)
+
+    assert exc_info.value.provider == "TronProvider"
+
+
+@pytest.mark.anyio
+async def test_orchestrator_falls_back_on_empty_live_result(temp_cache, monkeypatch):
+    """Test: When live provider returns 0 tx and 0 balance, orchestrator triggers synthetic_fallback."""
+    settings = get_settings()
+    monkeypatch.setattr(settings, "DEMO_MODE", False)
+
+    orchestrator = FetchOrchestrator(cache=temp_cache)
+
+    # Mock provider returning 0 transactions and 0 balance
+    async def empty_txs(addr, limit=100):
+        return []
+
+    async def zero_balance(addr):
+        return 0.0
+
+    monkeypatch.setattr(orchestrator.providers[Chain.ETH], "get_wallet_transactions", empty_txs)
+    monkeypatch.setattr(orchestrator.providers[Chain.ETH], "get_wallet_balance", zero_balance)
+
+    result = await orchestrator.fetch_wallet("0xEmptyWalletAddress", Chain.ETH)
+
+    assert result.data_source == DataSource.SYNTHETIC_FALLBACK.value
     assert len(result.transactions) > 0
     assert "Live provider error" in (result.error_message or "")
 
@@ -238,7 +350,6 @@ async def test_cache_hit_returns_without_refetch(temp_cache, monkeypatch):
 
     temp_cache.set("0xCachedAddress123", Chain.ETH, mock_result)
 
-    # Fetch should return from cache without calling provider
     fetched = await orchestrator.fetch_wallet("0xCachedAddress123", Chain.ETH)
     assert fetched.data_source == DataSource.CACHE.value
     assert fetched.balance == 10.0
@@ -254,7 +365,6 @@ async def test_demo_mode_bypasses_live_providers(temp_cache, monkeypatch):
 
     orchestrator = FetchOrchestrator(cache=temp_cache)
 
-    # Even with an arbitrary address, returns synthetic data immediately
     result = await orchestrator.fetch_wallet("0xSomeArbitraryWallet", Chain.ETH)
     assert result.data_source == DataSource.SYNTHETIC.value
     assert len(result.transactions) > 0
@@ -269,7 +379,7 @@ def test_api_fetch_endpoints():
         data = resp.json()
         assert data["address"] == "0x71c67d8e1c39e08736602382d625114498ca78a0"
         assert data["chain"] == "ETH"
-        assert data["data_source"] in ("synthetic", "live", "cache")
+        assert data["data_source"] in ("synthetic", "live", "cache", "synthetic_fallback")
         assert len(data["transactions"]) > 0
 
         # 2. Fetch balance
@@ -277,7 +387,7 @@ def test_api_fetch_endpoints():
         assert bal_resp.status_code == 200
         bal_data = bal_resp.json()
         assert "balance" in bal_data
-        assert bal_data["data_source"] in ("synthetic", "live", "cache")
+        assert bal_data["data_source"] in ("synthetic", "live", "cache", "synthetic_fallback")
 
         # 3. Invalid chain returns 400
         bad_resp = client.get("/api/v1/fetch/DODGECOIN/someaddress")

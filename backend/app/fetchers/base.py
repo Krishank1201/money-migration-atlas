@@ -3,6 +3,14 @@ from typing import List
 from app.core.schemas import Chain, Transaction
 
 
+class ProviderError(Exception):
+    """Raised when a live provider cannot fulfill a request. Triggers synthetic fallback."""
+    def __init__(self, provider: str, reason: str):
+        self.provider = provider
+        self.reason = reason
+        super().__init__(f"[{provider}] {reason}")
+
+
 class BlockchainProvider(ABC):
     """Abstract interface for blockchain network transaction and balance providers."""
 

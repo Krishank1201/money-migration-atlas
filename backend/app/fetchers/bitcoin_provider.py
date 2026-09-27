@@ -5,7 +5,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from app.core.schemas import Chain, Transaction
-from app.fetchers.base import BlockchainProvider
+from app.fetchers.base import BlockchainProvider, ProviderError
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -46,9 +46,31 @@ class BitcoinProvider(BlockchainProvider):
             resp = await client.get(url, params=params)
             if resp.status_code == 429:
                 logger.warning("Blockchair API rate limit hit for %s", address)
-                resp.raise_for_status()
+                raise ProviderError("BitcoinProvider", "Rate limit exceeded (429)")
             resp.raise_for_status()
-            return resp.json()
+            data = resp.json()
+
+        # Strict validation
+        if not isinstance(data, dict):
+            raise ProviderError("BitcoinProvider", f"Invalid response type: expected dict, got {type(data).__name__}")
+
+        if "data" not in data:
+            raise ProviderError("BitcoinProvider", "Missing 'data' field in Blockchair response")
+
+        context = data.get("context", {})
+        if isinstance(context, dict):
+            if "error" in context and context["error"]:
+                raise ProviderError("BitcoinProvider", f"Blockchair context error: {context['error']}")
+            if "warning" in context and context["warning"]:
+                logger.warning("Blockchair context warning: %s", context["warning"])
+
+        if address not in data["data"]:
+            raise ProviderError("BitcoinProvider", f"Address {address} not found in Blockchair response data")
+
+        if "transactions" not in data["data"][address]:
+            raise ProviderError("BitcoinProvider", f"Missing 'transactions' in Blockchair data for {address}")
+
+        return data
 
     async def get_wallet_balance(self, address: str) -> float:
         try:
@@ -56,9 +78,11 @@ class BitcoinProvider(BlockchainProvider):
             addr_data = data.get("data", {}).get(address, {}).get("address", {})
             satoshis = addr_data.get("balance", 0)
             return round(satoshis / 1e8, 8)
+        except ProviderError:
+            raise
         except Exception as e:
             logger.warning("Failed to fetch BTC balance for %s: %s", address, e)
-            raise
+            raise ProviderError("BitcoinProvider", str(e))
 
     async def get_wallet_transactions(self, address: str, limit: int = 100) -> List[Transaction]:
         try:
@@ -81,7 +105,6 @@ class BitcoinProvider(BlockchainProvider):
                         fee=0.0001
                     ))
                 elif isinstance(item, dict):
-                    # Rich payload (mock or detailed dashboard)
                     tx_hash = item.get("hash") or item.get("tx_hash") or "unknown_tx"
                     amt = float(item.get("amount") or item.get("balance_change", 0))
                     parsed.append(Transaction(
@@ -96,6 +119,8 @@ class BitcoinProvider(BlockchainProvider):
                     ))
 
             return parsed
+        except ProviderError:
+            raise
         except Exception as e:
             logger.warning("Failed to fetch BTC transactions for %s: %s", address, e)
-            raise
+            raise ProviderError("BitcoinProvider", str(e))

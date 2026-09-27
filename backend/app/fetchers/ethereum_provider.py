@@ -5,7 +5,7 @@ import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from app.core.schemas import Chain, Transaction
-from app.fetchers.base import BlockchainProvider
+from app.fetchers.base import BlockchainProvider, ProviderError
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class EthereumProvider(BlockchainProvider):
     Supports normal transactions (ETH) and ERC-20 token transfers (USDT, USDC, etc.).
     """
 
-    BASE_URL = "https://api.etherscan.io/api"
+    BASE_URL = "https://api.etherscan.io/v2/api"
 
     def __init__(self, api_key: Optional[str] = None, timeout: Optional[int] = None):
         settings = get_settings()
@@ -28,7 +28,6 @@ class EthereumProvider(BlockchainProvider):
         return Chain.ETH
 
     def is_available(self) -> bool:
-        # Usable with public key or mock fallback
         return True
 
     @retry(
@@ -38,6 +37,7 @@ class EthereumProvider(BlockchainProvider):
         reraise=True
     )
     async def _query_etherscan(self, params: dict) -> dict:
+        params["chainid"] = 1
         if self.api_key:
             params["apikey"] = self.api_key
 
@@ -45,7 +45,17 @@ class EthereumProvider(BlockchainProvider):
             resp = await client.get(self.BASE_URL, params=params)
             resp.raise_for_status()
             data = resp.json()
-            return data
+
+        # Strict validation
+        status = str(data.get("status", "1"))
+        message = str(data.get("message", "OK"))
+        result = data.get("result")
+
+        if status == "0":
+            err_msg = f"{message} - {result}" if result else message
+            raise ProviderError("EthereumProvider", err_msg)
+
+        return data
 
     async def get_wallet_balance(self, address: str) -> float:
         try:
@@ -59,9 +69,11 @@ class EthereumProvider(BlockchainProvider):
             wei_str = data.get("result", "0")
             wei = float(wei_str) if isinstance(wei_str, (int, float, str)) and str(wei_str).isdigit() else 0.0
             return round(wei / 1e18, 6)
+        except ProviderError:
+            raise
         except Exception as e:
             logger.warning("Failed to fetch ETH balance for %s: %s", address, e)
-            raise
+            raise ProviderError("EthereumProvider", str(e))
 
     async def get_wallet_transactions(self, address: str, limit: int = 100) -> List[Transaction]:
         transactions: List[Transaction] = []
@@ -79,25 +91,27 @@ class EthereumProvider(BlockchainProvider):
                 "sort": "desc"
             }
             data_tx = await self._query_etherscan(params_tx)
-            results_tx = data_tx.get("result", [])
-            if isinstance(results_tx, list):
-                for item in results_tx:
-                    val_wei = float(item.get("value", 0))
-                    gas_used = float(item.get("gasUsed", 21000))
-                    gas_price = float(item.get("gasPrice", 20000000000))
-                    fee_eth = (gas_used * gas_price) / 1e18
+            results_tx = data_tx.get("result")
+            if not isinstance(results_tx, list):
+                raise ProviderError("EthereumProvider", f"Invalid txlist result: expected list, got {type(results_tx).__name__}")
 
-                    transactions.append(Transaction(
-                        tx_hash=item.get("hash", ""),
-                        chain=Chain.ETH,
-                        from_address=item.get("from", "").lower(),
-                        to_address=item.get("to", "").lower(),
-                        amount=round(val_wei / 1e18, 6),
-                        token_symbol="ETH",
-                        timestamp=int(item.get("timeStamp", time.time())),
-                        fee=round(fee_eth, 6),
-                        gas_price=gas_price / 1e9
-                    ))
+            for item in results_tx:
+                val_wei = float(item.get("value", 0))
+                gas_used = float(item.get("gasUsed", 21000))
+                gas_price = float(item.get("gasPrice", 20000000000))
+                fee_eth = (gas_used * gas_price) / 1e18
+
+                transactions.append(Transaction(
+                    tx_hash=item.get("hash", ""),
+                    chain=Chain.ETH,
+                    from_address=item.get("from", "").lower(),
+                    to_address=item.get("to", "").lower(),
+                    amount=round(val_wei / 1e18, 6),
+                    token_symbol="ETH",
+                    timestamp=int(item.get("timeStamp", time.time())),
+                    fee=round(fee_eth, 6),
+                    gas_price=gas_price / 1e9
+                ))
 
             # 2. Fetch ERC-20 token transfers (e.g. USDT)
             params_token = {
@@ -111,26 +125,30 @@ class EthereumProvider(BlockchainProvider):
                 "sort": "desc"
             }
             data_token = await self._query_etherscan(params_token)
-            results_token = data_token.get("result", [])
-            if isinstance(results_token, list):
-                for item in results_token:
-                    decimals = int(item.get("tokenDecimal", 18) or 18)
-                    val_token = float(item.get("value", 0)) / (10 ** decimals)
-                    transactions.append(Transaction(
-                        tx_hash=item.get("hash", ""),
-                        chain=Chain.ETH,
-                        from_address=item.get("from", "").lower(),
-                        to_address=item.get("to", "").lower(),
-                        amount=round(val_token, 4),
-                        token_symbol=item.get("tokenSymbol", "TOKEN").upper(),
-                        timestamp=int(item.get("timeStamp", time.time())),
-                        fee=0.002
-                    ))
+            results_token = data_token.get("result")
+            if not isinstance(results_token, list):
+                raise ProviderError("EthereumProvider", f"Invalid tokentx result: expected list, got {type(results_token).__name__}")
+
+            for item in results_token:
+                decimals = int(item.get("tokenDecimal", 18) or 18)
+                val_token = float(item.get("value", 0)) / (10 ** decimals)
+                transactions.append(Transaction(
+                    tx_hash=item.get("hash", ""),
+                    chain=Chain.ETH,
+                    from_address=item.get("from", "").lower(),
+                    to_address=item.get("to", "").lower(),
+                    amount=round(val_token, 4),
+                    token_symbol=item.get("tokenSymbol", "TOKEN").upper(),
+                    timestamp=int(item.get("timeStamp", time.time())),
+                    fee=0.002
+                ))
 
             # Sort by timestamp descending
             transactions.sort(key=lambda t: t.timestamp, reverse=True)
             return transactions[:limit]
 
+        except ProviderError:
+            raise
         except Exception as e:
             logger.warning("Failed to fetch ETH transactions for %s: %s", address, e)
-            raise
+            raise ProviderError("EthereumProvider", str(e))

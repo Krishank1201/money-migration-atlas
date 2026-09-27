@@ -5,7 +5,7 @@ import hashlib
 
 from app.core.schemas import Chain, Transaction, FetchResult, DataSource
 from app.config import get_settings
-from app.fetchers.base import BlockchainProvider
+from app.fetchers.base import BlockchainProvider, ProviderError
 from app.fetchers.bitcoin_provider import BitcoinProvider
 from app.fetchers.ethereum_provider import EthereumProvider
 from app.fetchers.tron_provider import TronProvider
@@ -36,7 +36,9 @@ class FetchOrchestrator:
     def set_graph_store(self, store: GraphStore) -> None:
         self.graph_store = store
 
-    def _generate_synthetic_fallback(self, address: str, chain: Chain) -> FetchResult:
+    def _generate_synthetic_fallback(
+        self, address: str, chain: Chain, data_source: str = DataSource.SYNTHETIC.value
+    ) -> FetchResult:
         """Constructs synthetic transactions if address is in graph store or dynamically synthesizes plausible history."""
         txs: List[Transaction] = []
         balance = 1.25
@@ -70,13 +72,19 @@ class FetchOrchestrator:
                     fee=0.001
                 ))
 
+        msg = (
+            "Offline demo mode active"
+            if data_source == DataSource.SYNTHETIC.value
+            else "Live provider failed or returned empty; fell back to synthetic data"
+        )
+
         return FetchResult(
             address=address,
             chain=chain,
-            data_source=DataSource.SYNTHETIC.value,
+            data_source=data_source,
             transactions=txs,
             balance=balance,
-            error_message="Fallback to synthetic mode (demo mode active or live provider bypassed)"
+            error_message=msg
         )
 
     async def fetch_wallet(
@@ -84,15 +92,15 @@ class FetchOrchestrator:
     ) -> FetchResult:
         """
         Fetches wallet transactions & balance with tiered resolution:
-        1. DEMO_MODE=true -> Synthetic fallback directly (no network calls)
-        2. Cache Check -> Return cached data if valid
-        3. Live Provider -> Call Blockchair/Etherscan/TronGrid with timeout
-        4. Provider Failure -> Log warning & return synthetic fallback
+        1. DEMO_MODE=true -> data_source="synthetic"
+        2. Cache Check -> data_source="cache"
+        3. Live Provider -> data_source="live" (must have >=1 tx OR non-zero balance)
+        4. Provider Failure/Empty -> data_source="synthetic_fallback"
         """
         # Tier 1: DEMO_MODE bypasses all external network calls
         if self.settings.DEMO_MODE:
             logger.info("DEMO_MODE=true active. Using synthetic provider for %s:%s", chain.value, address)
-            return self._generate_synthetic_fallback(address, chain)
+            return self._generate_synthetic_fallback(address, chain, data_source=DataSource.SYNTHETIC.value)
 
         # Tier 2: Check Cache
         if not bypass_cache:
@@ -105,7 +113,9 @@ class FetchOrchestrator:
         provider = self.providers.get(chain)
         if not provider:
             logger.warning("No provider registered for chain %s; falling back to synthetic", chain.value)
-            return self._generate_synthetic_fallback(address, chain)
+            return self._generate_synthetic_fallback(
+                address, chain, data_source=DataSource.SYNTHETIC_FALLBACK.value
+            )
 
         try:
             logger.info("Attempting live on-chain fetch for %s via %s", address, provider.__class__.__name__)
@@ -114,6 +124,11 @@ class FetchOrchestrator:
                 bal = await provider.get_wallet_balance(address)
             except Exception:
                 bal = 0.0
+
+            # Post-fetch sanity check: empty transactions and zero balance means failure/no key
+            if len(txs) == 0 and bal == 0.0:
+                logger.warning("Provider %s returned empty result for %s, treating as failure", provider.__class__.__name__, address)
+                raise ProviderError(provider.__class__.__name__, "Provider returned empty result (0 transactions and 0 balance)")
 
             result = FetchResult(
                 address=address,
@@ -129,12 +144,14 @@ class FetchOrchestrator:
             return result
 
         except Exception as e:
-            # Tier 4: Graceful fallback on API failure or rate limit
+            # Tier 4: Graceful fallback on API failure, rate limit, or empty result
             logger.warning(
                 "Live provider %s failed for %s (%s). Gracefully falling back to synthetic data.",
                 provider.__class__.__name__, address, e
             )
-            fallback = self._generate_synthetic_fallback(address, chain)
+            fallback = self._generate_synthetic_fallback(
+                address, chain, data_source=DataSource.SYNTHETIC_FALLBACK.value
+            )
             fallback.error_message = f"Live provider error: {str(e)}. Fallback to synthetic."
             return fallback
 

@@ -119,6 +119,7 @@ class DataSource(str, Enum):
     LIVE = "live"
     SYNTHETIC = "synthetic"
     CACHE = "cache"
+    SYNTHETIC_FALLBACK = "synthetic_fallback"
 
 
 class FetchResult(BaseModel):

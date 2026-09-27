@@ -35,8 +35,8 @@ A foundational requirement for SIH26182 court admissibility is **strict score se
 
 | Phase | Description | Status |
 | :--- | :--- | :--- |
-| **Phase 1** | **Project Scaffold + Synthetic Data Generator**: Dual-engine GraphStore (Neo4j + NetworkX), deterministic seed generator, 9 VASPs, 550+ wallets, 2200+ transactions, 8 ground-truth benchmarks, health check. | **Completed** |
-| **Phase 2** | **Multi-Chain Blockchain Fetcher**: Pluggable provider architecture for live on-chain ingestion (BTC, ETH, TRC-20, BSC, SOL, POLYGON) with rate limiting and local caching. | *Upcoming* |
+| **Phase 1** | **Project Scaffold + Synthetic Data Generator**: Dual-engine GraphStore (Neo4j + NetworkX), deterministic seed generator, 9 VASPs, 550+ wallets, 2200+ transactions, 12 ground-truth benchmarks, health check. | **Completed** |
+| **Phase 2** | **Multi-Chain Blockchain Fetcher**: Provider abstraction for BTC (Blockchair), ETH/ERC-20 (Etherscan), TRC-20 (TronGrid) with SHA-256 file caching, resilient fallback, and DEMO_MODE toggle. | **Completed** |
 | **Phase 3** | **Graph Construction & Neo4j Integration**: Full Cypher synchronization, APOC-accelerated graph projections, and multi-hop neighborhood expansion. | *Upcoming* |
 | **Phase 4** | **Baseline ML & Feature Engineering**: Tabular graph feature extraction (in/out degree, turnover velocity, peeling indicators) and XGBoost baseline. | *Upcoming* |
 | **Phase 5** | **Graph Neural Network (GNN)**: PyTorch Geometric GraphSAGE / GATv2 architecture predicting wallet-to-VASP attribution probabilities. | *Upcoming* |
@@ -47,7 +47,35 @@ A foundational requirement for SIH26182 court admissibility is **strict score se
 
 ---
 
-## 4. Phase 1 Deliverables & Architecture
+## 4. Phase 2 Architecture: Multi-Chain Ingestion & Resilient Fallback
+
+The ingestion layer (`backend/app/fetchers/`) unifies public blockchain explorers under a shared `BlockchainProvider` contract:
+- **Bitcoin (`BitcoinProvider`)**: Blockchair API (`/bitcoin/dashboards/address/{address}`).
+- **Ethereum (`EthereumProvider`)**: Etherscan API v2 (native ETH `txlist` + ERC-20 `tokentx`).
+- **Tron (`TronProvider`)**: TronGrid API (native TRX + TRC-20 USDT contract transfers).
+
+### Fallback Hierarchy & Zero-Crash Guarantee
+1. **`DEMO_MODE=true` (Default for Hackathons)**: Bypasses all live network calls, immediately serving deterministic synthetic topologies. Guaranteed to function offline without API keys or internet.
+2. **Local SHA-256 File Cache (`backend/data/cache/`)**: Checks cached JSON files by `hash(chain:address)`. Avoids burning third-party rate limits during active investigation.
+3. **Live On-Chain API**: Queries Blockchair / Etherscan / TronGrid with timeout and exponential backoff.
+4. **Resilient Fallback**: If an API is rate-limited, unreachable, or returns an error, the orchestrator logs a warning and generates synthetic history for that wallet. **The platform never crashes.**
+
+### Toggling Between Live and Demo Modes
+In `.env`:
+```bash
+# Offline demo mode (zero external API calls)
+DEMO_MODE=true
+
+# Live blockchain mode
+DEMO_MODE=false
+ETHERSCAN_API_KEY=your_etherscan_api_key
+BLOCKCHAIR_API_KEY=your_blockchair_api_key  # Optional
+TRONGRID_API_KEY=your_trongrid_api_key      # Optional
+```
+
+---
+
+## 5. Phase 1 Architecture: Dual-Engine Graph & Hardened Benchmarks
 
 - **Dual Graph Engine (`app.graph`)**:
   - `GraphStore`: Abstract base class for clean swappability.
