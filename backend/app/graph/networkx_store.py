@@ -142,15 +142,16 @@ class NetworkXStore(GraphStore):
                     vasp = self.vasps.get(vasp_id)
                     vasp_name = vasp.name if vasp else vasp_id
                     
-                    # Extract path and transaction hashes
+                    # Extract path, transaction hashes, and cumulative edge weight
                     node_path = all_paths[target_addr]
                     tx_hashes: List[str] = []
+                    cum_weight = 0.0
                     for i in range(len(node_path) - 1):
                         u, v = node_path[i], node_path[i + 1]
                         edge_data = self.graph.get_edge_data(u, v)
                         if edge_data:
-                            # pick first edge key
                             first_key = next(iter(edge_data))
+                            cum_weight += edge_data[first_key].get("weight", 1.0)
                             tx_hashes.append(edge_data[first_key].get("tx_hash", ""))
 
                     candidates.append({
@@ -158,7 +159,7 @@ class NetworkXStore(GraphStore):
                         "vasp_name": vasp_name,
                         "target_wallet": target_addr,
                         "proximity_rank": hops,
-                        "distance": float(hops),
+                        "distance": round(cum_weight, 4),
                         "path": node_path,
                         "tx_hashes": tx_hashes,
                         "fiu_ind_registered": vasp.fiu_ind_registered if vasp else False

@@ -27,13 +27,13 @@ def test_deterministic_reproducibility():
 
 
 def test_dataset_scale_and_chain_coverage():
-    """Verify minimum scale requirements: 8+ VASPs, 500+ wallets, 2000+ transactions."""
+    """Verify scale requirements: 8+ VASPs, 500+ wallets, 2000+ transactions, 12 test cases."""
     vasps, wallets, transactions, test_cases = generate_synthetic_data(seed=42)
 
     assert len(vasps) >= 8, f"Expected >= 8 VASPs, got {len(vasps)}"
     assert len(wallets) >= 500, f"Expected >= 500 wallets, got {len(wallets)}"
     assert len(transactions) >= 2000, f"Expected >= 2000 transactions, got {len(transactions)}"
-    assert len(test_cases) == 8, f"Expected 8 benchmark test cases, got {len(test_cases)}"
+    assert len(test_cases) == 12, f"Expected 12 benchmark test cases, got {len(test_cases)}"
 
     # Check multi-chain presence (BTC, ETH, TRON_TRC20)
     chains_present = {w.chain for w in wallets}
@@ -60,49 +60,79 @@ def test_networkx_store_population_and_query():
     assert fetched.address == sample_wallet.address
 
 
-def test_all_8_benchmark_cases_ground_truth_proximity():
+def test_all_12_cases_expected_vasp_reachability():
+    """Verify that the true ground-truth VASP is always topologically reachable for all 12 cases."""
+    store = NetworkXStore()
+    vasps, wallets, transactions, test_cases = generate_synthetic_data(seed=42, store=store)
+
+    assert len(test_cases) == 12
+
+    for case in test_cases:
+        candidates = store.find_nearest_vasp(case.suspect_wallet, max_hops=6)
+        vasp_ids = [c["vasp_id"] for c in candidates]
+        assert case.expected_vasp in vasp_ids, (
+            f"Case {case.case_id}: expected VASP {case.expected_vasp} not reachable from {case.suspect_wallet}"
+        )
+
+
+def test_baseline_accuracy_is_sweet_spot():
     """
-    Verify that for every benchmark test case:
-    1. The suspect wallet resolves to the expected ground-truth VASP
-    2. The calculated hop count matches the expected topological distance
-    3. The evidence path and transaction hashes are forensically complete
+    CRITICAL CHECK: Pure graph distance must NOT solve all cases.
+    Accurate target: 3 <= correct <= 6 out of 12 (leaves headroom for GNN & Behavioral models).
     """
     store = NetworkXStore()
     vasps, wallets, transactions, test_cases = generate_synthetic_data(seed=42, store=store)
 
-    assert len(test_cases) == 8
-
+    correct = 0
     for case in test_cases:
         candidates = store.find_nearest_vasp(case.suspect_wallet, max_hops=6)
-        assert len(candidates) > 0, f"Failed to find any VASP candidates for {case.case_id}"
+        if candidates and candidates[0]["vasp_id"] == case.expected_vasp:
+            correct += 1
 
-        top_candidate = candidates[0]
-        assert top_candidate["vasp_id"] == case.expected_vasp, (
-            f"Case {case.case_id} failed: expected {case.expected_vasp}, "
-            f"got {top_candidate['vasp_id']}"
-        )
-        assert top_candidate["proximity_rank"] == case.expected_graph_distance, (
-            f"Case {case.case_id} distance mismatch: expected {case.expected_graph_distance}, "
-            f"got {top_candidate['proximity_rank']}"
-        )
-        assert len(top_candidate["path"]) >= 2
-        assert len(top_candidate["tx_hashes"]) == top_candidate["proximity_rank"]
+    assert 3 <= correct <= 6, f"Expected baseline accuracy between 3 and 6 out of 12, got {correct}/12"
+
+
+def test_at_least_three_cross_chain_cases():
+    """Verify that at least 3 benchmark cases involve multi-chain routing (e.g. BTC -> ETH -> TRON)."""
+    gen = SyntheticDataGenerator(seed=42)
+    _, _, _, test_cases = gen.generate()
+
+    cross_chain_cases = [c for c in test_cases if c.is_cross_chain]
+    assert len(cross_chain_cases) >= 3, f"Expected >= 3 cross-chain cases, got {len(cross_chain_cases)}"
+
+
+def test_at_least_two_proximity_ties():
+    """Verify that at least 2 benchmark cases feature equal-hop proximity ties requiring confidence models."""
+    gen = SyntheticDataGenerator(seed=42)
+    _, _, _, test_cases = gen.generate()
+
+    tie_cases = [c for c in test_cases if c.has_proximity_tie]
+    assert len(tie_cases) >= 2, f"Expected >= 2 proximity tie cases, got {len(tie_cases)}"
+
+
+def test_cases_103_and_104_have_naive_proximity_fail_flag():
+    """Verify that CASE-103 and CASE-104 explicitly flag that naive proximity fails."""
+    gen = SyntheticDataGenerator(seed=42)
+    _, _, _, test_cases = gen.generate()
+
+    c103 = next((c for c in test_cases if c.case_id == "CASE-103"), None)
+    c104 = next((c for c in test_cases if c.case_id == "CASE-104"), None)
+
+    assert c103 is not None and c103.naive_proximity_will_fail is True
+    assert c104 is not None and c104.naive_proximity_will_fail is True
+    assert c103.requires_behavioral_fingerprint is True
+    assert c104.requires_behavioral_fingerprint is True
 
 
 def test_strict_score_separation_invariant():
-    """
-    Verify that Attribution enforces strict separation between:
-    - proximity_rank (integer hops)
-    - confidence_score (float probability from ML/GNN)
-    and that never_blended is True.
-    """
+    """Verify invariant that proximity_rank and confidence_score are never blended."""
     attr = Attribution(
         suspect_wallet="bc1qtest123",
         chain=Chain.BTC,
         predicted_vasp="coindcx",
         proximity_rank=3,
-        proximity_distance=3.0,
-        confidence_score=None,  # Not fabricated in Phase 1
+        proximity_distance=0.45,
+        confidence_score=None,
         confidence_tier=ConfidenceTier.UNKNOWN,
         evidence_subgraph=[],
         evidence_hashes=["0xhash1", "0xhash2", "0xhash3"],
@@ -126,7 +156,7 @@ def test_fastapi_health_endpoint():
         assert data["graph_backend"] == "networkx"
         assert data["wallet_count"] >= 500
         assert data["transaction_count"] >= 2000
-        assert data["benchmark_cases_count"] == 8
+        assert data["benchmark_cases_count"] == 12
 
 
 def test_fastapi_demo_benchmark_endpoints():
@@ -136,7 +166,7 @@ def test_fastapi_demo_benchmark_endpoints():
         cases_resp = client.get("/api/v1/demo/test-cases")
         assert cases_resp.status_code == 200
         cases = cases_resp.json()
-        assert len(cases) == 8
+        assert len(cases) == 12
         assert cases[0]["case_id"] == "CASE-001"
 
         # 2. Evaluate CASE-001 proximity

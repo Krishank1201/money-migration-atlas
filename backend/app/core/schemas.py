@@ -107,3 +107,9 @@ class GroundTruthTestCase(BaseModel):
     expected_confidence_range: Tuple[float, float]
     laundering_pattern: str
     chain: Chain
+    expected_min_hops: Optional[int] = None
+    expected_max_hops: Optional[int] = None
+    requires_behavioral_fingerprint: bool = False
+    has_proximity_tie: bool = False
+    is_cross_chain: bool = False
+    naive_proximity_will_fail: bool = False
