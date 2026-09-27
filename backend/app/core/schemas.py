@@ -113,3 +113,20 @@ class GroundTruthTestCase(BaseModel):
     has_proximity_tie: bool = False
     is_cross_chain: bool = False
     naive_proximity_will_fail: bool = False
+
+
+class DataSource(str, Enum):
+    LIVE = "live"
+    SYNTHETIC = "synthetic"
+    CACHE = "cache"
+
+
+class FetchResult(BaseModel):
+    """Encapsulates transactions and balance fetched from live blockchain or synthetic fallback."""
+    address: str
+    chain: Chain
+    data_source: str = Field(..., description="Origin of data: 'live', 'synthetic', or 'cache'")
+    transactions: List[Transaction] = Field(default_factory=list)
+    balance: float = 0.0
+    cached_at: Optional[int] = None
+    error_message: Optional[str] = None

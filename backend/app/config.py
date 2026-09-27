@@ -28,8 +28,19 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
     NEO4J_TIMEOUT_SECONDS: float = 1.5
 
+    # Blockchain Provider API Keys
+    ETHERSCAN_API_KEY: Optional[str] = None
+    BLOCKCHAIR_API_KEY: Optional[str] = None
+    TRONGRID_API_KEY: Optional[str] = None
+
+    # Fetching & Caching Configuration
+    FETCH_TIMEOUT_SECONDS: int = 5
+    CACHE_TTL_HOURS: int = 24
+    PROVIDER_RETRY_ATTEMPTS: int = 2
+
     # Storage Paths
     DATA_DIR: str = "data"
+    CACHE_DIR: str = "data/cache"
 
     model_config = SettingsConfigDict(
         env_file=".env",

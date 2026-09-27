@@ -11,18 +11,21 @@ from app.graph.neo4j_store import Neo4jStore
 from app.graph.store import GraphStore
 from app.data.synthetic_generator import generate_synthetic_data
 from app.api.v1.demo import router as demo_router, set_demo_context
+from app.api.v1.fetcher import router as fetcher_router, set_fetch_orchestrator
+from app.fetchers.orchestrator import FetchOrchestrator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("mma")
 
-# Global active graph store
+# Global active graph store and fetch orchestrator
 active_graph_store: GraphStore = None
+fetch_orchestrator: FetchOrchestrator = None
 benchmark_cases = []
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global active_graph_store, benchmark_cases
+    global active_graph_store, fetch_orchestrator, benchmark_cases
     settings = get_settings()
     logger.info("Initializing %s (DEMO_MODE=%s, SEED=%s)", settings.APP_NAME, settings.DEMO_MODE, settings.RANDOM_SEED)
 
@@ -55,6 +58,10 @@ async def lifespan(app: FastAPI):
             len(vasps), len(wallets), len(transactions), len(benchmark_cases)
         )
 
+    # 3. Initialize FetchOrchestrator
+    fetch_orchestrator = FetchOrchestrator(graph_store=active_graph_store)
+    set_fetch_orchestrator(fetch_orchestrator)
+
     yield
 
     # Teardown
@@ -80,6 +87,7 @@ app.add_middleware(
 
 # Mount API routers
 app.include_router(demo_router, prefix="/api/v1")
+app.include_router(fetcher_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["System"])
