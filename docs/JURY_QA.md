@@ -54,13 +54,13 @@
 
 ### Q9: Why should the Ministry of Home Affairs (MHA) trust an AI model in a court case?
 **Answer (30s):**
-> "Under Section 65B of the Indian Evidence Act and algorithmic disclosure precedents, courts reject unexplainable proprietary scores. Our system does not output an opaque verdict; it generates a court-ready dossier containing: the raw transaction hashes, the exact path addresses, local SHAP feature impact rankings, GNN subgraph motif explanations, and counterfactual stress tests. The AI acts as an objective calculation assistant that proves its reasoning, not a black-box oracle."
+> "Our evidence package is structured to support the certificate requirements under Section 65B(4) of the Indian Evidence Act — transaction hashes, timestamps, model versions, and a monotonic chain of custody are all attached. Transparent SHAP weights and GNN subgraph motif extraction make the reasoning auditable."
 
 ---
 
 ### Q10: What is your infrastructure and computing cost at scale?
 **Answer (30s):**
-> "Extremely low. Because our feature extraction relies on lightweight NetworkX/Neo4j graph metrics and 2-layer GraphSAGE message passing, single-case inference requires under 450 milliseconds on standard CPU hardware without needing dedicated GPU clusters. A state police cyber lab can run the entire Money Migration Atlas stack on a standard on-premise server costing less than ₹1.5 Lakhs, with zero cloud API dependencies."
+> "Runs on CPU-only commodity hardware — no GPU required. Inference completes in interactive time on standard forensic workstations. This is a design goal, not a benchmarked claim; production latency would be validated during a state police pilot."
 
 ---
 

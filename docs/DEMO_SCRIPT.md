@@ -21,13 +21,13 @@
 ### [00:00 – 00:30] The Law Enforcement Problem & Solution Core
 - **Spoken:**
   > "Distinguished jury, when criminal proceeds migrate across blockchains through peel chains and intermediary mixers, Indian law enforcement faces a critical hurdle: **Which regulated Indian VASP holds custody of the destination wallet?** 
-  > Under Section 91 of the CrPC, lawful disclosure directives and emergency freeze notices can only be served to compliant reporting entities registered with FIU-IND. 
+  > Under Section 91 of the CrPC, courts can summon documents from any entity. However, enforcement is practical only for entities with a legal presence in India. FIU-IND registration provides MHA with an enforcement channel that offshore exchanges do not have. 
   > Existing closed commercial tools rely on proprietary black boxes that don't satisfy rigorous evidentiary scrutiny in court. 
   > **Money Migration Atlas** is an explainable, multi-model forensic pipeline combining topological Dijkstra traversal, 20-feature XGBoost gradient boosting, and Graph Neural Network message passing into an unblended, auditable attribution engine."
 
 - **Action:**
   - Show the Dashboard landing view with the 12 SIH Benchmark test cases and live system metrics.
-  - Point to the Model Architecture summary badges: **XGBoost (Brier Score 0.074)** and **GraphSAGE (0.86 ROC-AUC)**.
+  - Point to Model Architecture summary badges: XGBoost — ROC AUC 0.9217, Brier Score 0.074. GNN — 10/12 benchmark accuracy. Consensus — 11/12 with zero confirmed-wrong attributions.
 
 ---
 
@@ -38,12 +38,8 @@
 
 - **Action:**
   - Click on **CASE-002** in the Quick Scenario Selector.
-  - The live inference progress timeline animates:
-    1. *Dijkstra Shortest Path Traversal*
-    2. *XGBoost 20-Feature Inference*
-    3. *GraphSAGE Structural Message Passing*
-    4. *Multi-Model Consensus Agreement*
-  - The Investigation View loads in under 500ms.
+  - The loading view displays the multi-stage attribution pipeline (Dijkstra Traversal, XGBoost Features, GraphSAGE Message Passing, Consensus Agreement).
+  - The investigation view, interactive transaction graph, and candidate scores render simultaneously upon completion.
 
 - **Spoken:**
   > "Notice how our UI preserves strict evidentiary discipline: **Topological proximity rank and predictive confidence are NEVER blended into a single composite metric.**
