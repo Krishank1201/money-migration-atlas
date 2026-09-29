@@ -24,6 +24,13 @@ class ConfidenceTier(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class ConsensusTier(str, Enum):
+    CONFIRMED = "CONFIRMED"
+    AMBIGUOUS = "AMBIGUOUS"
+    UNCERTAIN = "UNCERTAIN"
+    SINGLE_MODEL = "SINGLE_MODEL"
+
+
 class LaunderingPattern(str, Enum):
     PEELING = "peeling"
     MIXER = "mixer"
@@ -173,6 +180,13 @@ class NearestVASPCandidate(BaseModel):
     confidence_tier: ConfidenceTier = ConfidenceTier.UNKNOWN
     shap_explanation: Optional[List[ShapFeature]] = None
     model_version: Optional[str] = None
+    gnn_confidence_score: Optional[float] = None
+    gnn_confidence_tier: Optional[ConfidenceTier] = None
+    gnn_model_used: Optional[str] = None
+    consensus_tier: Optional[ConsensusTier] = None
+    xgb_gnn_agreement: Optional[float] = None
+    consensus_score: Optional[float] = None
+    gnn_subgraph_explanation: Optional[List[Dict[str, Any]]] = None
     never_blended: bool = Field(default=True, description="Enforces strict separation of proximity rank and confidence score")
 
     @field_validator("never_blended")

@@ -91,3 +91,33 @@
 ## 4. Final Verdict
 
 **VERDICT: Model is USEFUL**
+
+---
+
+## 5. GNN Confidence Calibration: The $p_{\text{null}}$ Technique
+
+### 1. Root Cause of 1.00 Output Inflation
+In early iterations, the GNN predictor normalized raw candidate probabilities among only reachable VASPs:
+$$\text{norm\_prob} = \frac{p_c}{\sum_{k \in \text{Reachable}} p_k}$$
+Whenever only a single VASP candidate was topologically reachable from a suspect wallet ($|\text{Reachable}| = 1$), the denominator equaled the numerator ($p_c / p_c \equiv 1.0000$). This artificially saturated model confidence to exactly 1.00 regardless of the underlying logits or model certainty.
+
+### 2. Prior Formulation ($p_{\text{null}} = 1/9$)
+To prevent this single-candidate inflation artifact, we introduce an unreached background prior:
+$$p_{\text{null}} = \frac{1}{|\mathcal{V}|} = \frac{1}{9} \approx 0.1111$$
+where $|\mathcal{V}| = 9$ represents the uniform prior probability over all supported VASP classes in the network.
+
+### 3. Normalization Formula
+When only a single candidate is reachable, its calibrated probability is bounded against the null background prior:
+$$p_{\text{norm}} = \frac{p_{\text{raw}}}{p_{\text{raw}} + p_{\text{null}}}$$
+
+### 4. Worked Example: CASE-004
+For `CASE-004` (target: CoinSwitch):
+- **GraphSAGE raw logit:** $-0.9684$
+- **Raw 9-class softmax ($p_{\text{raw}}$):** $0.0429$
+- **Uniform null prior ($p_{\text{null}}$):** $\frac{1}{9} \approx 0.1111$
+- **Calibrated Probability:**
+  $$p_{\text{norm}} = \frac{0.0429}{0.0429 + 0.1111} = \frac{0.0429}{0.1540} \approx 0.279$$
+
+### 5. Explicit Probability Scope Acknowledgment
+> **Explicit Acknowledgment:**  
+> This inflates raw softmax by ~9x. It answers the question **"conditional on this candidate being reachable, how likely?"** rather than **"probability among all 9 classes."**

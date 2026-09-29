@@ -1,0 +1,203 @@
+{
+  "suspect_wallet": "0x3abbabd786df35a0b7bf9ad43047ccf88e0f4584",
+  "chain": "ETH",
+  "candidates": [
+    {
+      "vasp_id": "binance_offshore",
+      "vasp_name": "Binance (Offshore)",
+      "proximity_rank": 2,
+      "distance": 0.0491,
+      "target_wallet": "0x7aaf4f02cd791871d819a7c354152aebca4fc844",
+      "path": [
+        "0x3abbabd786df35a0b7bf9ad43047ccf88e0f4584",
+        "0x2aacdeee49e258d9cc59798ebdee6537e3a3155e",
+        "0x7aaf4f02cd791871d819a7c354152aebca4fc844"
+      ],
+      "tx_hashes": [
+        "0xb4591e37e1c08f65bd4014ff1b8383a2b61a57ae22652f755f55c6b993ce4f76",
+        "0xbf98f443d0db488e2052593c16ebbc2db9e94b910c5d6dd3a90c64082830b679"
+      ],
+      "chain_path": [],
+      "fiu_ind_registered": false,
+      "confidence_score": 0.2782,
+      "confidence_tier": "LOW",
+      "shap_explanation": [
+        {
+          "feature": "num_paths_to_vasp",
+          "value": 1.0,
+          "shap": -0.5047,
+          "direction": "negative"
+        },
+        {
+          "feature": "total_amount_on_path",
+          "value": 79.5,
+          "shap": -0.4101,
+          "direction": "negative"
+        },
+        {
+          "feature": "avg_hop_time_seconds",
+          "value": 1200.0,
+          "shap": 0.3906,
+          "direction": "positive"
+        },
+        {
+          "feature": "avg_path_length",
+          "value": 2.0,
+          "shap": -0.3763,
+          "direction": "negative"
+        },
+        {
+          "feature": "amount_std_dev",
+          "value": 0.25,
+          "shap": -0.2868,
+          "direction": "negative"
+        }
+      ],
+      "model_version": "xgboost_v1_2026-09-29",
+      "gnn_confidence_score": 0.6053,
+      "gnn_confidence_tier": "MEDIUM",
+      "gnn_model_used": "ensemble",
+      "consensus_tier": "SINGLE_MODEL",
+      "xgb_gnn_agreement": 0.6729,
+      "consensus_score": 0.6053,
+      "gnn_subgraph_explanation": [
+        {
+          "edge": [
+            "1",
+            "0"
+          ],
+          "weight": 0.6876
+        },
+        {
+          "edge": [
+            "0",
+            "2"
+          ],
+          "weight": 0.5787
+        },
+        {
+          "edge": [
+            "2",
+            "0"
+          ],
+          "weight": 0.3584
+        },
+        {
+          "edge": [
+            "2",
+            "3"
+          ],
+          "weight": 0.3253
+        },
+        {
+          "edge": [
+            "3",
+            "2"
+          ],
+          "weight": 0.2777
+        }
+      ],
+      "never_blended": true
+    },
+    {
+      "vasp_id": "mudrex",
+      "vasp_name": "Mudrex",
+      "proximity_rank": 3,
+      "distance": 0.0625,
+      "target_wallet": "TRqUk4xE4x32FqdEU7wTFNcxinAKavauNw",
+      "path": [
+        "0x3abbabd786df35a0b7bf9ad43047ccf88e0f4584",
+        "0xc0d28ba7c85f8ffd39dc1655dbd35673e6bbc717",
+        "TCcjF5nKv6fRMKb2JzczS93pCNkr74xvsp",
+        "TRqUk4xE4x32FqdEU7wTFNcxinAKavauNw"
+      ],
+      "tx_hashes": [
+        "0x0b170383847b2b09a024c90a064dad0da36f15d8287e03856255a3f8caeed084",
+        "2ea16f9a332fe58328cd4b82ff2ee58f15ebce667eee4c12c94933a5b789b5d7",
+        "230c046bfc1efd757360b659b98ec87d0f86b88a0464d769082d7b1cfb26729b"
+      ],
+      "chain_path": [],
+      "fiu_ind_registered": true,
+      "confidence_score": 0.5553,
+      "confidence_tier": "MEDIUM",
+      "shap_explanation": [
+        {
+          "feature": "avg_hop_time_seconds",
+          "value": 1800.0,
+          "shap": 0.7544,
+          "direction": "positive"
+        },
+        {
+          "feature": "suspect_degree",
+          "value": 2.0,
+          "shap": -0.5134,
+          "direction": "negative"
+        },
+        {
+          "feature": "amount_std_dev",
+          "value": 23516.1563,
+          "shap": 0.3574,
+          "direction": "positive"
+        },
+        {
+          "feature": "num_paths_to_vasp",
+          "value": 1.0,
+          "shap": -0.3071,
+          "direction": "negative"
+        },
+        {
+          "feature": "total_amount_on_path",
+          "value": 99815.0,
+          "shap": -0.1928,
+          "direction": "negative"
+        }
+      ],
+      "model_version": "xgboost_v1_2026-09-29",
+      "gnn_confidence_score": 0.4574,
+      "gnn_confidence_tier": "LOW",
+      "gnn_model_used": "ensemble",
+      "consensus_tier": "UNCERTAIN",
+      "xgb_gnn_agreement": 0.9021,
+      "consensus_score": 0.5553,
+      "gnn_subgraph_explanation": [
+        {
+          "edge": [
+            "1",
+            "3"
+          ],
+          "weight": 0.7633
+        },
+        {
+          "edge": [
+            "3",
+            "1"
+          ],
+          "weight": 0.7445
+        },
+        {
+          "edge": [
+            "3",
+            "0"
+          ],
+          "weight": 0.7184
+        },
+        {
+          "edge": [
+            "0",
+            "3"
+          ],
+          "weight": 0.5845
+        },
+        {
+          "edge": [
+            "4",
+            "1"
+          ],
+          "weight": 0.4605
+        }
+      ],
+      "never_blended": true
+    }
+  ],
+  "never_blended": true
+}

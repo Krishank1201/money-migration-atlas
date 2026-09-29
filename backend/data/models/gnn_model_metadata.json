@@ -1,0 +1,16 @@
+{
+  "model_version": "gnn_v1_2026-09-29",
+  "trained_at": "2026-09-29T14:29:33.967309+00:00",
+  "dataset_samples": 324,
+  "train_samples": 226,
+  "val_samples": 48,
+  "test_samples": 50,
+  "metrics": {
+    "graphsage_test_acc": 0.16,
+    "gatv2_test_acc": 0.12,
+    "ensemble_test_acc": 0.14,
+    "final_train_loss_sage": 2.0743,
+    "final_train_loss_gat": 2.1498
+  },
+  "excluded_benchmark_count": 59
+}
