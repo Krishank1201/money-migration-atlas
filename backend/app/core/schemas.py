@@ -308,19 +308,55 @@ class EvidencePackage(BaseModel):
         return True
 
 
+class CounterfactualItem(BaseModel):
+    """Forensic what-if scenario with explicit audit provenance."""
+    text: str
+    provenance: str = Field(..., description="'recomputed' | 'estimated_shap' | 'qualitative'")
+    method: str
+
+    def __str__(self) -> str:
+        return self.text
+
+
 class CandidateExplanation(BaseModel):
     """Explanation and counterfactual analysis for an individual candidate VASP."""
     candidate: NearestVASPCandidate
     explanation: str
-    counterfactuals: List[str] = Field(default_factory=list)
+    counterfactuals: List[CounterfactualItem] = Field(default_factory=list)
     data_source: str = Field(default="template_fallback", description="'llm' or 'template_fallback'")
+
+    @field_validator("counterfactuals", mode="before")
+    @classmethod
+    def normalize_counterfactuals(cls, v: Any) -> List[Any]:
+        if not isinstance(v, list):
+            return []
+        items = []
+        for item in v:
+            if isinstance(item, str):
+                items.append(CounterfactualItem(text=item, provenance="qualitative", method="Topological projection"))
+            else:
+                items.append(item)
+        return items
 
 
 class ExplanationResponse(BaseModel):
     """LLM or template generated explanation with counterfactuals and provenance."""
     plain_language: str
-    counterfactuals: List[str] = Field(default_factory=list)
+    counterfactuals: List[CounterfactualItem] = Field(default_factory=list)
     data_source: str = Field(..., description="'llm' or 'template_fallback'")
+
+    @field_validator("counterfactuals", mode="before")
+    @classmethod
+    def normalize_counterfactuals(cls, v: Any) -> List[Any]:
+        if not isinstance(v, list):
+            return []
+        items = []
+        for item in v:
+            if isinstance(item, str):
+                items.append(CounterfactualItem(text=item, provenance="qualitative", method="Topological projection"))
+            else:
+                items.append(item)
+        return items
 
 
 class InvestigationReport(BaseModel):
@@ -330,10 +366,23 @@ class InvestigationReport(BaseModel):
     plain_language_summary: str
     data_source: str = Field(..., description="'llm' or 'template_fallback'")
     top_3_candidates: List[CandidateExplanation] = Field(default_factory=list)
-    counterfactuals: List[str] = Field(default_factory=list)
+    counterfactuals: List[CounterfactualItem] = Field(default_factory=list)
     evidence_package: EvidencePackage
     recommended_action: RecommendedAction
     never_blended: bool = Field(default=True, description="Strict invariant: scores are never blended")
+
+    @field_validator("counterfactuals", mode="before")
+    @classmethod
+    def normalize_counterfactuals(cls, v: Any) -> List[Any]:
+        if not isinstance(v, list):
+            return []
+        items = []
+        for item in v:
+            if isinstance(item, str):
+                items.append(CounterfactualItem(text=item, provenance="qualitative", method="Topological projection"))
+            else:
+                items.append(item)
+        return items
 
     @field_validator("never_blended")
     @classmethod

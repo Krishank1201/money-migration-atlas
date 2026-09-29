@@ -102,7 +102,8 @@ class LLMClient:
         xgb_score = candidate_data.get("confidence_score")
         gnn_score = candidate_data.get("gnn_confidence_score")
         beh_score = candidate_data.get("behavioral_confidence_score")
-        cons_tier = candidate_data.get("consensus_tier", "UNCERTAIN")
+        cons_tier_raw = candidate_data.get("consensus_tier", "UNCERTAIN")
+        cons_tier = cons_tier_raw.value if hasattr(cons_tier_raw, "value") else str(cons_tier_raw)
         cons_score = candidate_data.get("consensus_score", 0.0)
         counterfactuals = context.get("counterfactuals", [])
 

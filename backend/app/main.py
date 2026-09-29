@@ -17,6 +17,8 @@ from app.api.v1.admin import router as admin_router, set_admin_context
 from app.api.v1.ml import router as ml_router, set_ml_context
 from app.api.v1.gnn import gnn_router, consensus_router, set_gnn_context
 from app.api.v1.behavioral import behavioral_router, set_behavioral_context
+from app.api.v1.agentic import agentic_router, set_agentic_context
+from app.api.v1.evidence import evidence_router, set_evidence_context
 from app.fetchers.orchestrator import FetchOrchestrator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -39,6 +41,8 @@ def on_store_switched(new_store: GraphStore):
     set_ml_context(new_store, benchmark_cases)
     set_gnn_context(new_store, benchmark_cases)
     set_behavioral_context(new_store)
+    set_agentic_context(new_store)
+    set_evidence_context(new_store)
     if fetch_orchestrator:
         fetch_orchestrator.graph_store = new_store
     logger.info("Active store propagated to all modules: %s", new_store.__class__.__name__)
@@ -99,6 +103,8 @@ async def lifespan(app: FastAPI):
     set_ml_context(active_graph_store, benchmark_cases)
     set_gnn_context(active_graph_store, benchmark_cases)
     set_behavioral_context(active_graph_store)
+    set_agentic_context(active_graph_store)
+    set_evidence_context(active_graph_store)
 
     yield
 
@@ -132,6 +138,8 @@ app.include_router(ml_router, prefix="/api/v1")
 app.include_router(gnn_router, prefix="/api/v1")
 app.include_router(consensus_router, prefix="/api/v1")
 app.include_router(behavioral_router, prefix="/api/v1")
+app.include_router(agentic_router, prefix="/api/v1")
+app.include_router(evidence_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["System"])

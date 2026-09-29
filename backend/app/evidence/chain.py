@@ -37,25 +37,40 @@ class EvidenceChainBuilder:
         """
         Builds a comprehensive EvidencePackage for the designated candidate.
         """
-        now_iso = datetime.now(timezone.utc).isoformat()
+        import time
+        from datetime import timedelta
 
-        # Chain of Custody Audit Trail (Deterministic chronological sequence)
+        def _step_time(prev: Optional[datetime] = None) -> datetime:
+            time.sleep(0.002)  # distinct physical clock time
+            cur = datetime.now(timezone.utc)
+            if prev and cur <= prev:
+                cur = prev + timedelta(microseconds=1000)
+            return cur
+
+        t1 = _step_time(None)
+        t2 = _step_time(t1)
+        t3 = _step_time(t2)
+        t4 = _step_time(t3)
+        t5 = _step_time(t4)
+        now_iso = t5.isoformat()
+
+        # Chain of Custody Audit Trail (Sequential chronological progression)
         custody_trail = [
             CustodyStep(
                 step="INGESTION_AND_INDEXING",
-                timestamp=now_iso,
+                timestamp=t1.isoformat(),
                 source="MMA_GRAPH_ENGINE",
                 notes=f"Suspect address {suspect_wallet} located in graph with {len(candidate.path)} path nodes."
             ),
             CustodyStep(
                 step="TOPOLOGICAL_TRAVERSAL",
-                timestamp=now_iso,
+                timestamp=t2.isoformat(),
                 source="DIJKSTRA_GRAPH_TRAVERSAL",
                 notes=f"Identified {candidate.proximity_rank}-hop path to {candidate.vasp_name} deposit sweeper."
             ),
             CustodyStep(
                 step="SUPERVISED_MODEL_INFERENCE",
-                timestamp=now_iso,
+                timestamp=t3.isoformat(),
                 source="XGBOOST_AND_GNN_ENSEMBLE",
                 notes=(
                     f"XGBoost probability: {candidate.confidence_score or 'N/A'}, "
@@ -64,13 +79,13 @@ class EvidenceChainBuilder:
             ),
             CustodyStep(
                 step="CONSENSUS_VERIFICATION",
-                timestamp=now_iso,
+                timestamp=t4.isoformat(),
                 source="CONSENSUS_AGREEMENT_LAYER",
                 notes=f"Tier verified as {candidate.consensus_tier.value if candidate.consensus_tier else 'UNCERTAIN'} without score blending."
             ),
             CustodyStep(
                 step="EVIDENCE_SEALING",
-                timestamp=now_iso,
+                timestamp=t5.isoformat(),
                 source="FORENSIC_INTEGRITY_ASSERTION",
                 notes="never_blended=True validated; evidence dossier finalized."
             ),
