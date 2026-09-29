@@ -1,0 +1,60 @@
+{
+  "model_version": "xgboost_v1_2026-09-29",
+  "trained_at": "2026-09-29T14:16:55.395874+00:00",
+  "dataset_rows": 324,
+  "feature_count": 20,
+  "features": [
+    "proximity_rank",
+    "num_paths_to_vasp",
+    "avg_path_length",
+    "min_path_length",
+    "max_path_length",
+    "path_touches_mixer",
+    "num_mixer_hops_on_path",
+    "path_mixer_penalty",
+    "path_crosses_chain",
+    "num_chain_hops",
+    "total_amount_on_path",
+    "amount_retention_ratio",
+    "max_single_hop_amount",
+    "amount_std_dev",
+    "avg_hop_time_seconds",
+    "time_compression_ratio",
+    "burst_detection",
+    "suspect_degree",
+    "suspect_tx_count",
+    "vasp_is_indian_fiu"
+  ],
+  "metrics": {
+    "accuracy": 0.9388,
+    "precision": 0.92,
+    "recall": 0.9583,
+    "f1_score": 0.9388,
+    "roc_auc": 0.9217,
+    "brier_score": 0.074,
+    "calibration_high_conf": 0.9048,
+    "high_conf_test_samples": 21,
+    "confusion_matrix": [
+      [
+        23,
+        2
+      ],
+      [
+        1,
+        23
+      ]
+    ],
+    "train_samples": 226,
+    "val_samples": 49,
+    "test_samples": 49,
+    "dataset_rows": 324,
+    "positive_samples": 162,
+    "negative_samples": 162
+  },
+  "hyperparameters": {
+    "n_estimators": 100,
+    "max_depth": 4,
+    "learning_rate": 0.05
+  },
+  "leakage_guard_excluded_addresses_count": 59
+}

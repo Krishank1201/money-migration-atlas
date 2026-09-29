@@ -1,0 +1,82 @@
+[
+  {
+    "feature": "avg_path_length",
+    "importance": 0.354795
+  },
+  {
+    "feature": "num_paths_to_vasp",
+    "importance": 0.1176
+  },
+  {
+    "feature": "vasp_is_indian_fiu",
+    "importance": 0.099692
+  },
+  {
+    "feature": "suspect_degree",
+    "importance": 0.085515
+  },
+  {
+    "feature": "max_single_hop_amount",
+    "importance": 0.071723
+  },
+  {
+    "feature": "amount_std_dev",
+    "importance": 0.054393
+  },
+  {
+    "feature": "proximity_rank",
+    "importance": 0.049345
+  },
+  {
+    "feature": "total_amount_on_path",
+    "importance": 0.048444
+  },
+  {
+    "feature": "max_path_length",
+    "importance": 0.040645
+  },
+  {
+    "feature": "avg_hop_time_seconds",
+    "importance": 0.040114
+  },
+  {
+    "feature": "amount_retention_ratio",
+    "importance": 0.037735
+  },
+  {
+    "feature": "min_path_length",
+    "importance": 0.0
+  },
+  {
+    "feature": "path_touches_mixer",
+    "importance": 0.0
+  },
+  {
+    "feature": "num_mixer_hops_on_path",
+    "importance": 0.0
+  },
+  {
+    "feature": "path_mixer_penalty",
+    "importance": 0.0
+  },
+  {
+    "feature": "path_crosses_chain",
+    "importance": 0.0
+  },
+  {
+    "feature": "num_chain_hops",
+    "importance": 0.0
+  },
+  {
+    "feature": "time_compression_ratio",
+    "importance": 0.0
+  },
+  {
+    "feature": "burst_detection",
+    "importance": 0.0
+  },
+  {
+    "feature": "suspect_tx_count",
+    "importance": 0.0
+  }
+]

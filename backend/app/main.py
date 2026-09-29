@@ -14,6 +14,7 @@ from app.api.v1.demo import router as demo_router, set_demo_context
 from app.api.v1.fetcher import router as fetcher_router, set_fetch_orchestrator
 from app.api.v1.graph import router as graph_router, set_graph_context
 from app.api.v1.admin import router as admin_router, set_admin_context
+from app.api.v1.ml import router as ml_router, set_ml_context
 from app.fetchers.orchestrator import FetchOrchestrator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -33,6 +34,7 @@ def on_store_switched(new_store: GraphStore):
     active_graph_store = new_store
     set_demo_context(new_store, benchmark_cases)
     set_graph_context(new_store, fetch_orchestrator)
+    set_ml_context(new_store, benchmark_cases)
     if fetch_orchestrator:
         fetch_orchestrator.graph_store = new_store
     logger.info("Active store propagated to all modules: %s", new_store.__class__.__name__)
@@ -90,6 +92,7 @@ async def lifespan(app: FastAPI):
     set_fetch_orchestrator(fetch_orchestrator)
     set_graph_context(active_graph_store, fetch_orchestrator)
     set_admin_context(nx_store, neo4j_store, active_graph_store, on_store_switched)
+    set_ml_context(active_graph_store, benchmark_cases)
 
     yield
 
@@ -119,6 +122,7 @@ app.include_router(demo_router, prefix="/api/v1")
 app.include_router(fetcher_router, prefix="/api/v1")
 app.include_router(graph_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(ml_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["System"])

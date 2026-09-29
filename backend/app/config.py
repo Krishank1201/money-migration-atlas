@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     DATA_DIR: str = "data"
     CACHE_DIR: str = "data/cache"
 
+    # Machine Learning Configuration (Phase 4)
+    ML_MODEL_PATH: str = "backend/data/models/xgboost_v1.pkl"
+    ML_TRAIN_TEST_SPLIT: float = 0.15
+    ML_RANDOM_SEED: int = 42
+    ML_CONFIDENCE_HIGH_THRESHOLD: float = 0.75
+    ML_CONFIDENCE_MEDIUM_THRESHOLD: float = 0.50
+    ML_CONFIDENCE_LOW_THRESHOLD: float = 0.25
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Tuple, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Chain(str, Enum):
@@ -150,8 +150,16 @@ class IngestionReport(BaseModel):
     source: str = Field(..., description="Data source identifier ('synthetic', 'live', 'benchmark')")
 
 
+class ShapFeature(BaseModel):
+    """Top feature attribution from SHAP explainability."""
+    feature: str = Field(..., description="Feature identifier name")
+    value: float = Field(..., description="Observed feature value for this sample")
+    shap: float = Field(..., description="SHAP contribution value")
+    direction: str = Field(..., description="Direction of contribution: 'positive' or 'negative'")
+
+
 class NearestVASPCandidate(BaseModel):
-    """Candidate VASP identified via topological traversal."""
+    """Candidate VASP identified via topological traversal and ML attribution."""
     vasp_id: str
     vasp_name: str
     proximity_rank: int = Field(..., description="Graph distance in hops to VASP-controlled address")
@@ -163,6 +171,41 @@ class NearestVASPCandidate(BaseModel):
     fiu_ind_registered: bool = False
     confidence_score: Optional[float] = None
     confidence_tier: ConfidenceTier = ConfidenceTier.UNKNOWN
+    shap_explanation: Optional[List[ShapFeature]] = None
+    model_version: Optional[str] = None
+    never_blended: bool = Field(default=True, description="Enforces strict separation of proximity rank and confidence score")
+
+    @field_validator("never_blended")
+    @classmethod
+    def validate_never_blended(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("Invariant violated: proximity_rank and confidence_score must NEVER be blended.")
+        return True
+
+
+class MLPredictResponse(BaseModel):
+    """Full attribution response with independent scores and SHAP explainability."""
+    suspect_wallet: str
+    chain: Chain
+    candidates: List[NearestVASPCandidate]
+    never_blended: bool = Field(default=True, description="Asserted at runtime: scores are strictly unblended")
+
+    @field_validator("never_blended")
+    @classmethod
+    def validate_never_blended(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("Invariant violated: proximity_rank and confidence_score must NEVER be blended.")
+        return True
+
+
+class MLModelInfoResponse(BaseModel):
+    """Metadata regarding currently loaded XGBoost model."""
+    model_version: str
+    trained_at: Optional[str] = None
+    metrics: Dict[str, Any] = Field(default_factory=dict)
+    feature_importance: List[Dict[str, Any]] = Field(default_factory=list)
+    hyperparameters: Dict[str, Any] = Field(default_factory=dict)
+    training_samples: int = 0
 
 
 class AnalyticsResponse(BaseModel):
