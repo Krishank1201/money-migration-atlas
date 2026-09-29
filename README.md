@@ -169,3 +169,36 @@ curl -X POST "http://localhost:8000/api/v1/admin/switch-store?backend=networkx"
 ```
 If Neo4j is offline or unreachable, the system gracefully falls back to NetworkX without crashing.
 
+---
+
+## 7. The Three Behavioral Signals (Phase 6a)
+
+Traditional attribution follows money: addresses, hops, and transaction graph paths.
+**Money Migration Atlas ALSO follows human behavior.**
+
+Criminal syndicates frequently discard addresses, swap intermediate wallets, and peel transactions through coin mixers (e.g., Tornado Cash, ChipMixer) to break graph linkages. However, **perpetrators cannot easily change their operational habits**.
+
+Phase 6a extracts a 64-dimensional behavioral fingerprint that captures three enduring habitual dimensions:
+
+### 1. Timing: Inter-Hop Delay Patterns (16 Dimensions)
+- **What it captures**: Log-spaced histograms of inter-transaction latency, median transfer intervals, standard deviations, min/max wait times, and rapid-hop burst ratios ($\le 60$ seconds).
+- **Why it persists across wallet changes**: Automated scripts (bot syndicates) execute hops with predictable sub-second or fixed-interval intervals (e.g., exactly 120s or 1800s batch sweeps). Human operators display circadian sleep-wake cycles, business-hour clustering, and typical manual reaction delays. Even when transferring funds to a completely fresh address, automated or manual operational rhythms remain constant.
+
+### 2. Gas Fee: Quantization Preferences (16 Dimensions)
+- **What it captures**: Mean and median gas fees, gas fee quantization score (fraction aligned with round Gwei or round decimal increments), outlier ratios, skewness, kurtosis, and zero-fee transactions.
+- **Why it persists across wallet changes**: Wallet software, custom RPC nodes, and developer scripts possess distinct default gas setting configurations (e.g., "fast", "standard", or hardcoded gas prices like 20 Gwei). Laundering operations operating from consistent hardware, bots, or script frameworks continue to inject their default fee profiles across every newly generated intermediary wallet.
+
+### 3. Amount Structuring: Round-Number Splitting (16 Dimensions)
+- **What it captures**: Log-scaled amount moments, round-number fraction (divisible by 10, 100, 1000 or clean decimals), 5-tier denomination ratios ($<0.1$, $0.1–1$, $1–10$, $10–100$, $>100$), and output-to-input split ratios.
+- **Why it persists across wallet changes**: Peeling chains and structured smurfing follow specific syndicate liquidation policies (e.g., peeling exactly 5 ETH or 10,000 USDT increments). Smurfers systematically avoid irregular fractional outputs or adhere to predefined capital tranche quotas that persist across every peeling step before deposit.
+
+### Strict Score Separation Invariant:
+The resulting `behavioral_confidence_score` operates as a **strictly independent third signal**:
+- `proximity_rank`: Topological graph hops (how close?)
+- `confidence_score`: XGBoost tabular signals (how sure based on path structure?)
+- `gnn_confidence_score`: GNN relational embeddings (how sure based on graph topology?)
+- `behavioral_confidence_score`: Fingerprint cosine match (how sure based on habit signatures?)
+- `consensus_score = max(xgb, gnn, behavioral)`: Legitimate max-probability ensemble for final ranking.
+- All underlying raw scores remain visible and **NEVER blended**.
+
+

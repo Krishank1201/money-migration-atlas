@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Tuple, Dict, Any
+import numpy as np
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -29,6 +30,7 @@ class ConsensusTier(str, Enum):
     AMBIGUOUS = "AMBIGUOUS"
     UNCERTAIN = "UNCERTAIN"
     SINGLE_MODEL = "SINGLE_MODEL"
+    BEHAVIORAL_ONLY = "BEHAVIORAL_ONLY"
 
 
 class LaunderingPattern(str, Enum):
@@ -187,6 +189,9 @@ class NearestVASPCandidate(BaseModel):
     xgb_gnn_agreement: Optional[float] = None
     consensus_score: Optional[float] = None
     gnn_subgraph_explanation: Optional[List[Dict[str, Any]]] = None
+    behavioral_confidence_score: Optional[float] = None
+    behavioral_similar_wallets: Optional[List[str]] = None
+    behavioral_similarity_scores: Optional[List[float]] = None
     never_blended: bool = Field(default=True, description="Enforces strict separation of proximity rank and confidence score")
 
     @field_validator("never_blended")
@@ -227,4 +232,113 @@ class AnalyticsResponse(BaseModel):
     degree_distribution: Dict[str, Any] = Field(default_factory=dict)
     top_central_wallets: List[Dict[str, Any]] = Field(default_factory=list)
     mixer_candidates: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+class BehavioralFingerprint(BaseModel):
+    """64-dimensional behavioral fingerprint capturing transaction habits across timing, gas, amount, and chain domains."""
+    address: str
+    chain: Optional[str] = None
+    tx_count: int = 0
+    timing_vector: List[float] = Field(default_factory=list, description="16-dim timing feature vector")
+    gas_vector: List[float] = Field(default_factory=list, description="16-dim gas fee feature vector")
+    amount_vector: List[float] = Field(default_factory=list, description="16-dim amount structuring vector")
+    chain_vector: List[float] = Field(default_factory=list, description="16-dim chain + temporal vector")
+    summary: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Human-readable behavioral indicators")
+
+    def to_vector(self) -> np.ndarray:
+        vec = np.concatenate([
+            np.array(self.timing_vector, dtype=np.float32),
+            np.array(self.gas_vector, dtype=np.float32),
+            np.array(self.amount_vector, dtype=np.float32),
+            np.array(self.chain_vector, dtype=np.float32),
+        ])
+        if len(vec) != 64:
+            # Pad or truncate if dimensions differ
+            out = np.zeros(64, dtype=np.float32)
+            lim = min(len(vec), 64)
+            out[:lim] = vec[:lim]
+            return out
+        return vec
+
+
+class RecommendedAction(str, Enum):
+    """Forensic triage recommendations for law enforcement investigators."""
+    SEND_DISCLOSURE_REQUEST = "SEND_DISCLOSURE_REQUEST"
+    HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
+    INSUFFICIENT_SIGNAL = "INSUFFICIENT_SIGNAL"
+
+
+class CustodyStep(BaseModel):
+    """Immutable audit trail step for digital evidence chain of custody."""
+    step: str
+    timestamp: str
+    source: str
+    notes: str
+
+
+class EvidencePackage(BaseModel):
+    """Court-admissible forensic evidence dossier."""
+    suspect_wallet: str
+    top_candidate: Dict[str, Any] = Field(..., description="VASP identification and registration details")
+    proximity_rank: int = Field(..., description="Shortest topological graph hops")
+    proximity_path: List[str] = Field(default_factory=list, description="Sequence of addresses from suspect to deposit")
+    transaction_hashes: List[str] = Field(default_factory=list, description="On-chain tx hashes corresponding to path edges")
+    chain_path: List[str] = Field(default_factory=list, description="Blockchains traversed along path")
+    xgb_confidence_score: Optional[float] = None
+    xgb_confidence_tier: Optional[ConfidenceTier] = None
+    gnn_confidence_score: Optional[float] = None
+    gnn_confidence_tier: Optional[ConfidenceTier] = None
+    gnn_model_used: Optional[str] = None
+    behavioral_confidence_score: Optional[float] = None
+    consensus_score: Optional[float] = None
+    consensus_tier: Optional[ConsensusTier] = None
+    xgb_gnn_agreement: Optional[float] = None
+    shap_explanation: Optional[List[ShapFeature]] = None
+    gnn_subgraph_explanation: Optional[List[Dict[str, Any]]] = None
+    model_versions: Dict[str, str] = Field(default_factory=dict)
+    generated_at: str
+    never_blended: bool = Field(default=True, description="Strict invariant: topological and probabilistic scores are unblended")
+    chain_of_custody: List[CustodyStep] = Field(default_factory=list)
+
+    @field_validator("never_blended")
+    @classmethod
+    def validate_never_blended(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("Invariant violated: proximity_rank and confidence_score must NEVER be blended.")
+        return True
+
+
+class CandidateExplanation(BaseModel):
+    """Explanation and counterfactual analysis for an individual candidate VASP."""
+    candidate: NearestVASPCandidate
+    explanation: str
+    counterfactuals: List[str] = Field(default_factory=list)
+    data_source: str = Field(default="template_fallback", description="'llm' or 'template_fallback'")
+
+
+class ExplanationResponse(BaseModel):
+    """LLM or template generated explanation with counterfactuals and provenance."""
+    plain_language: str
+    counterfactuals: List[str] = Field(default_factory=list)
+    data_source: str = Field(..., description="'llm' or 'template_fallback'")
+
+
+class InvestigationReport(BaseModel):
+    """Comprehensive investigation-ready intelligence dossier combining narrative prose and mathematical proof."""
+    suspect_wallet: str
+    chain: Chain = Chain.ETH
+    plain_language_summary: str
+    data_source: str = Field(..., description="'llm' or 'template_fallback'")
+    top_3_candidates: List[CandidateExplanation] = Field(default_factory=list)
+    counterfactuals: List[str] = Field(default_factory=list)
+    evidence_package: EvidencePackage
+    recommended_action: RecommendedAction
+    never_blended: bool = Field(default=True, description="Strict invariant: scores are never blended")
+
+    @field_validator("never_blended")
+    @classmethod
+    def validate_never_blended(cls, v: bool) -> bool:
+        if not v:
+            raise ValueError("Invariant violated: proximity_rank and confidence_score must NEVER be blended.")
+        return True
 
