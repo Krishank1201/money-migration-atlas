@@ -1,204 +1,197 @@
 # Money Migration Atlas (SIH26182)
 
-> **AI-Native Cryptocurrency Intelligence Platform for Automated VASP Attribution & Asset Freezing**  
-> *Developed for Smart India Hackathon 2026 — Ministry of Home Affairs (MHA)*
+> **AI-Native Cryptocurrency Intelligence Platform for Automated VASP Attribution & Legal Disclosure Package Generation**  
+> *Developed for Smart India Hackathon 2026 — Ministry of Home Affairs (MHA) Problem Statement 26182*
 
 ---
 
-## 1. Problem Statement & Mission
+## 1. About the Project
 
-When criminal proceeds (cyber fraud, ransomware, narcotics, extortion) migrate across public blockchains, investigators must identify which regulated Indian Virtual Asset Service Provider (VASP) holds custody of the destination wallet to issue Section 91 CrPC lawful disclosure directives and emergency freeze requests.
+When criminal proceeds from cyber fraud, ransomware extortion, and darknet narcotics migrate across decentralized blockchains, Indian law enforcement agencies face a critical operational bottleneck. Laundering syndicates exploit multi-hop peel chains, coin splitters, cross-chain bridges, and decentralized mixing protocols to obfuscate the flow of funds. Under Section 91 of the Code of Criminal Procedure (CrPC), lawful disclosure directives and emergency freeze requests can only be served upon compliant, registered reporting entities under the purview of Financial Intelligence Unit - India (FIU-IND). Identifying which regulated exchange holds the terminus deposit wallet currently consumes hours or days of manual, error-prone tracing across fragmented block explorers.
 
-Currently, this investigative process takes **hours to days** of manual clustering and tracing across fragmented block explorers.
+Existing commercial intelligence tools (e.g., Chainalysis, TRM Labs, Elliptic) operate as proprietary, subscription-gated black boxes costing tens of thousands of dollars annually. Crucially, when an attribution determination is challenged in an Indian Sessions Court, commercial vendors cannot disclose proprietary source code or mathematical models for independent courtroom cross-examination. Furthermore, proprietary tools frequently collapse physical graph distance and heuristic clustering into ambiguous composite scores that violate digital evidentiary scrutiny.
 
-**Money Migration Atlas** automates this workflow down to seconds using:
-1. Multi-chain transaction graph ingestion (BTC, ETH, TRC-20, BSC, Solana, Polygon).
-2. Topological proximity ranking combined with Graph Neural Networks (GraphSAGE / GATv2).
-3. Behavioral fingerprinting to de-anonymize mixer passes and peeling chains.
-4. Generative adversarial red/blue laundering simulations.
-5. Plain-language agentic explanations with complete cryptographic proof chains.
-6. Direct mock routing into the **MHA SAHYOG** disclosure portal.
+**Money Migration Atlas** solves this challenge by delivering an open-source, mathematically transparent, and court-ready forensic intelligence pipeline. The platform ingests multi-chain ledgers (BTC, ETH, TRC-20 USDT), executes topological shortest-path traversals, extracts 20 tabular structural features for isotonically calibrated XGBoost classification, and performs neighborhood message passing via PyTorch Geometric GraphSAGE. Through an unblended dual-model consensus engine, the system arbitrates attribution verdicts, outputs plain-language agentic explanations with SHAP attributions, enforces an immutable SHA-256 digital chain of custody, and routes court-ready disclosure packages directly through a simulated MHA SAHYOG gateway.
 
 ---
 
 ## 2. Core Architectural Invariant: Strict Score Separation
 
 A foundational requirement for SIH26182 court admissibility is **strict score separation**:
-- **Proximity Rank (Topological Distance)**: Exact integer graph distance (hops) and weighted Dijkstra traversal cost from the suspect wallet to a VASP-controlled hot wallet or deposit sweeper.
-- **Confidence Score (Model Attribution)**: Independent probabilistic classification (0.0 to 1.0) produced by the GNN and behavioral classifier.
+- **Proximity Rank (Topological Distance)**: Exact integer graph distance (hops) and Dijkstra traversal weight from the suspect wallet to a VASP-controlled deposit cluster.
+- **Confidence Score (Model Attribution)**: Independent probabilistic confidence scores produced by XGBoost (`confidence_score`) and GraphSAGE (`gnn_confidence_score`).
+- **Consensus Score (`consensus_score`)**: Independent consensus arbitration tier (`CONFIRMED`, `AMBIGUOUS`, `UNCERTAIN`, `SINGLE_MODEL`).
 
-> **CRITICAL RULE**: These two metrics are **NEVER blended** into a composite score. Investigators and judges require distinct, unadulterated evidence.
+> **CRITICAL LEGAL INVARIANT**: Proximity rank and confidence scores are **NEVER blended** into a composite metric. Invariant `never_blended=True` is enforced at runtime via Pydantic validators. Courts receive physical graph facts and statistical predictions as strictly distinct parameters.
 
 ---
 
-## 3. Phase Roadmap (Phases 1–9)
+## 3. Architecture & 9-Phase Roadmap Final State
 
-| Phase | Description | Status |
+```
+                                      +------------------------------------+
+                                      |     Suspect Target Address         |
+                                      +-----------------+------------------+
+                                                        |
+                                                        v
+                                      +------------------------------------+
+                                      |  Blockchain Ingestion & Fallback   |
+                                      |   (Etherscan / TronGrid / Synth)   |
+                                      +-----------------+------------------+
+                                                        |
+                                                        v
+                                      +------------------------------------+
+                                      | Dual GraphStore (NetworkX / Neo4j) |
+                                      +--------+------------------+--------+
+                                               |                  |
+                       +-----------------------+                  +-----------------------+
+                       | Topological BFS/Dijkstra                                         | 2-Hop Ego Subgraph
+                       v                                                                  v
+        +------------------------------+                                  +------------------------------+
+        |   Tabular Feature Engine     |                                  | PyTorch Geometric GraphSAGE  |
+        |  (20 features, SHAP values)  |                                  | (Node/Edge Message Passing)  |
+        +--------------+---------------+                                  +--------------+---------------+
+                       |                                                                 |
+                       v                                                                 v
+        +------------------------------+                                  +------------------------------+
+        | XGBoost Classifier (Calib.)  |                                  | GNN Softmax + Null Class     |
+        |   Brier Score: 0.074         |                                  |   ROC-AUC: 0.86              |
+        +--------------+---------------+                                  +--------------+---------------+
+                       |                                                                 |
+                       +-----------------------+                  +----------------------+
+                                               |                  |
+                                               v                  v
+                                      +------------------------------------+
+                                      |    Multi-Model Consensus Engine    |
+                                      |  (CONFIRMED, AMBIGUOUS, UNCERTAIN) |
+                                      +-----------------+------------------+
+                                                        |
+                                                        v
+                                      +------------------------------------+
+                                      | Agentic Explainer & Counterfactual |
+                                      |  (SHAP impact + model provenance)  |
+                                      +-----------------+------------------+
+                                                        |
+                                                        v
+                                      +------------------------------------+
+                                      | Court-Ready Dossier (Sec. 91 CrPC) |
+                                      |    & SHA-256 Chain of Custody      |
+                                      +-----------------+------------------+
+                                                        |
+                                                        v
+                                      +------------------------------------+
+                                      |   MHA SAHYOG Mock Gateway Router   |
+                                      |    (FIU-IND Reporting Registry)    |
+                                      +------------------------------------+
+```
+
+### Complete 9-Phase Roadmap
+
+| Phase | Milestone | Deliverables & Final State |
 | :--- | :--- | :--- |
-| **Phase 1** | **Project Scaffold + Synthetic Data Generator**: Dual-engine GraphStore (Neo4j + NetworkX), deterministic seed generator, 9 VASPs, 550+ wallets, 2200+ transactions, 12 ground-truth benchmarks, health check. | **Completed** |
-| **Phase 2** | **Multi-Chain Blockchain Fetcher**: Provider abstraction for BTC (Blockchair), ETH/ERC-20 (Etherscan), TRC-20 (TronGrid) with SHA-256 file caching, resilient fallback, and DEMO_MODE toggle. | **Completed** |
-| **Phase 3** | **Graph Construction & Neo4j Integration**: Full Cypher synchronization, APOC-accelerated graph projections, UNWIND bulk ingestion, multi-hop live ingestion, and topological analytics. | **Completed** |
-| **Phase 4** | **Baseline ML & Feature Engineering**: Tabular graph feature extraction (in/out degree, turnover velocity, peeling indicators) and XGBoost baseline. | *Upcoming* |
-| **Phase 5** | **Graph Neural Network (GNN)**: PyTorch Geometric GraphSAGE / GATv2 architecture predicting wallet-to-VASP attribution probabilities. | *Upcoming* |
-| **Phase 6** | **Behavioral Fingerprinting & Adversarial Self-Play**: Temporal timing analysis, gas price profiling, and Red AI (laundering generator) vs. Blue AI (detection). | *Upcoming* |
-| **Phase 7** | **Agentic AI Co-Investigator & API**: Autonomous LLM agent reasoning over the graph, generating plain-language reports with cited tx hashes. | *Upcoming* |
-| **Phase 8** | **Frontend UI (Next.js / React + Cytoscape.js)**: Dark-mode dashboard, interactive transaction graph explorer, live proximity inspection, and telemetry. | *Upcoming* |
-| **Phase 9** | **Court-Admissible Evidence Chain & SAHYOG Mock**: Automated PDF/JSON evidence package generator with hash verification and mock Section 91 freeze requests. | *Upcoming* |
+| **Phase 1** | **Graph Scaffold & Synthetic Data** | Dual GraphStore (NetworkX + Neo4j), deterministic seed generator (`RANDOM_SEED=42`), 9 VASPs, 550+ wallets, 2200+ transactions, 12 ground-truth benchmark cases. |
+| **Phase 2** | **Multi-Chain Fetchers** | Provider abstraction for BTC (Blockchair), ETH/ERC-20 (Etherscan), TRC-20 (TronGrid) with SHA-256 caching, zero-crash fallback, and `DEMO_MODE=true` toggle. |
+| **Phase 3** | **Neo4j Enterprise Parity** | Dual-engine graph store parity, Cypher projections, shortest-path Dijkstra algorithms, and automated fallback when Neo4j is offline. |
+| **Phase 4 / 4.5** | **XGBoost Feature Attribution** | 20 tabular graph features (in/out degree, turnover velocity, path mixer penalty, flow fraction), isotonic probability calibration (Brier score 0.074), SHAP local explainability. |
+| **Phase 5 / 5.5** | **Graph Neural Network (GNN)** | PyG converter, 2-layer GraphSAGE architecture, uncalibrated softmax fix via prior $p_{\text{null}} = 1/9$, dual-model orthogonal validation. |
+| **Phase 6a** | **Behavioral Fingerprinting Audit** | 64-dimensional timing, gas, and structuring vectors. Rigorous mathematical honesty audit documenting sparse data limitations on synthetic graphs. |
+| **Phase 7 / 7.5** | **Agentic Explainer & Custody** | Plain-language narrative generation, model-attributed quantitative counterfactuals, SHA-256 digital chain of custody with strictly monotonic timestamps. |
+| **Phase 8** | **Interactive Web Application** | React 18 + Vite + Cytoscape.js interactive graph dashboard, multi-model confidence badges, consensus indicators, evidence JSON/Markdown exporters. |
+| **Phase 9** | **SAHYOG Mock & Final Delivery** | FIU-IND VASP registry, simulated Section 91 CrPC disclosure routing, deterministic audit request IDs, legal language cleanup, and jury defense assets. |
 
 ---
 
-## 4. Phase 2 Architecture: Multi-Chain Ingestion & Resilient Fallback
+## 4. Quick Start (3 Commands)
 
-The ingestion layer (`backend/app/fetchers/`) unifies public blockchain explorers under a shared `BlockchainProvider` contract:
-- **Bitcoin (`BitcoinProvider`)**: Blockchair API (`/bitcoin/dashboards/address/{address}`).
-- **Ethereum (`EthereumProvider`)**: Etherscan API v2 (native ETH `txlist` + ERC-20 `tokentx`).
-- **Tron (`TronProvider`)**: TronGrid API (native TRX + TRC-20 USDT contract transfers).
-
-### Fallback Hierarchy & Zero-Crash Guarantee
-1. **`DEMO_MODE=true` (Default for Hackathons)**: Bypasses all live network calls, immediately serving deterministic synthetic topologies. Guaranteed to function offline without API keys or internet.
-2. **Local SHA-256 File Cache (`backend/data/cache/`)**: Checks cached JSON files by `hash(chain:address)`. Avoids burning third-party rate limits during active investigation.
-3. **Live On-Chain API**: Queries Blockchair / Etherscan / TronGrid with timeout and exponential backoff.
-4. **Resilient Fallback**: If an API is rate-limited, unreachable, or returns an error, the orchestrator logs a warning and generates synthetic history for that wallet. **The platform never crashes.**
-
-### Toggling Between Live and Demo Modes
-In `.env`:
+### 1. Clone & Set Up Backend
 ```bash
-# Offline demo mode (zero external API calls)
-DEMO_MODE=true
-
-# Live blockchain mode
-DEMO_MODE=false
-ETHERSCAN_API_KEY=your_etherscan_api_key
-BLOCKCHAIR_API_KEY=your_blockchair_api_key  # Optional
-TRONGRID_API_KEY=your_trongrid_api_key      # Optional
+git clone https://github.com/Krishank1201/money-migration-atlas.git
+cd money-migration-atlas/backend
+python -m venv venv && source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python -m uvicorn app.main:app --port 8000 --reload
 ```
+
+### 2. Set Up Frontend
+In a new terminal:
+```bash
+cd money-migration-atlas/frontend
+npm install
+npm run dev
+```
+
+### 3. Open in Browser
+Visit **`http://localhost:5173`** to access the live Money Migration Atlas forensic dashboard. Backend OpenAPI documentation is available at **`http://localhost:8000/docs`**.
 
 ---
 
-## 5. Phase 1 Architecture: Dual-Engine Graph & Hardened Benchmarks
+## 5. 3-Minute Live Demo Walkthrough
 
-- **Dual Graph Engine (`app.graph`)**:
-  - `GraphStore`: Abstract base class for clean swappability.
-  - `NetworkXStore`: High-performance in-memory graph store with multi-hop BFS and path extraction. Ideal for zero-dependency hackathon laptop demos.
-  - `Neo4jStore`: Enterprise graph database driver with automatic reachability fallback.
-- **Deterministic Synthetic Generator (`app.data.synthetic_generator`)**:
-  - Controlled by `RANDOM_SEED=42` for 100% reproducible results across machines.
-  - Generates 9 VASPs (CoinDCX, WazirX, ZebPay, CoinSwitch, Mudrex, Giottus, Unocoin, Binance Offshore, Bybit).
-  - 550+ wallets and 2200+ transactions across BTC, ETH, and TRON-TRC20.
-  - Models 4 distinct laundering topologies: peeling chains, mixer/CoinJoin pools, nested transit hops, and deposit sweeper aggregation.
-- **8 Ground-Truth Benchmark Cases**:
-  - Pre-packaged investigative scenarios (`CASE-001` through `CASE-008`) with known ground-truth targets for automatic accuracy validation.
+Follow this scripted 3-minute sequence for hackathon presentations:
 
----
+1. **[00:00 - 00:30] Problem & Approach**:
+   - Open `http://localhost:5173`.
+   - Explain the law enforcement bottleneck: manual tracing through mixers to find FIU-regulated off-ramps under Section 91 CrPC.
+   - Point to the unblended metrics architecture: Proximity Rank vs. Confidence Score vs. Consensus.
 
-## 5. Quickstart
+2. **[00:30 - 01:15] Multi-Model Inference (CASE-002)**:
+   - Select **CASE-002** (Ethereum cyber fraud drainer) from the Quick Scenario Selector.
+   - Observe live pipeline execution: Dijkstra traversal $\rightarrow$ XGBoost inference $\rightarrow$ GraphSAGE message passing $\rightarrow$ Consensus evaluation.
+   - Highlight: Dijkstra finds WazirX at 2 hops; XGBoost scores 0.86; GraphSAGE scores 0.86. Consensus tier: **CONFIRMED**.
 
-### Prerequisites
-- Python 3.11+
-- Virtual environment tool (`venv`)
+3. **[01:15 - 02:00] Plain-Language Explanations & Counterfactuals**:
+   - Scroll to the Agentic Summary and Counterfactual cards.
+   - Demonstrate model-specific provenance: *"If flow volume dropped below 5,000 USDT, XGBoost confidence would fall from 0.86 to 0.41 (recomputed)."*
 
-### 1. Setup Environment
-```bash
-# Clone and enter directory
-cd money-migration-atlas
+4. **[02:00 - 02:35] Chain of Custody & Court-Ready Dossier**:
+   - Show the 5-step SHA-256 digital chain of custody audit trail with monotonic timestamps.
+   - Click **Download Dossier (Markdown)**: Note the clear legal disclaimer: *"Court-ready dossier formatted for Section 91 CrPC disclosure (not a certification)."*
 
-# Create and activate Python virtual environment
-python -m venv venv
-# On Windows Powershell:
-.\venv\Scripts\Activate.ps1
-# On Linux/macOS:
-source venv/bin/activate
+5. **[02:35 - 03:00] SAHYOG Gateway Routing**:
+   - Scroll to the **Route to SAHYOG** panel.
+   - Note the VASP status: CoinDCX / WazirX are FIU-IND registered.
+   - Click **Submit Disclosure Request**; observe status progression: `QUEUED` $\rightarrow$ `ROUTED` $\rightarrow$ `ACKNOWLEDGED` (24h SLA active).
+   - Point out that offshore VASPs (Bybit/Binance Offshore) disable automated routing and require MLAT / letters rogatory.
 
-# Install dependencies
-pip install -r backend/requirements.txt
-```
-
-### 2. Configure Environment Variables
-```bash
-cp .env.example .env
-```
-Default `.env` runs with `DEMO_MODE=true` and `RANDOM_SEED=42`.
-
-### 3. Run Automated Tests
-```bash
-cd backend
-python -m pytest tests/ -v
-```
-
-### 4. Start Backend Server
-```bash
-cd backend
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-### 5. Verify Health & Demo Endpoints
-- **Health Check**: `GET http://localhost:8000/health`
-- **Graph Statistics & Degree Distribution**: `GET http://localhost:8000/api/v1/graph/stats`
-- **List Benchmark Cases**: `GET http://localhost:8000/api/v1/demo/test-cases`
-- **Evaluate Proximity**: `GET http://localhost:8000/api/v1/demo/benchmark/CASE-001/proximity`
-- **Extract Ego Subgraph**: `GET http://localhost:8000/api/v1/graph/subgraph/ETH/0x...`
-- **Interactive OpenAPI Docs**: `http://localhost:8000/docs`
+Full presentation notes and Q&A responses are located in [`docs/DEMO_SCRIPT.md`](file:///docs/DEMO_SCRIPT.md) and [`docs/JURY_QA.md`](file:///docs/JURY_QA.md).
 
 ---
 
-## 6. Graph Backend Selection (NetworkX & Neo4j Dual Engine)
+## 6. Honest Limitations (Engineering & Scientific Integrity)
 
-Money Migration Atlas implements a resilient **Dual-Engine Graph Architecture**:
-- **NetworkX (Default)**: In-memory multi-directed graph store. Zero external dependencies, starts in < 1 second, and powers fully reproducible offline hackathon presentations.
-- **Neo4j (Production / Scale)**: Enterprise graph database with persistent Bolt connection, Cypher queries, UNWIND bulk ingestion, and APOC / Graph Data Science plugin support.
+In accordance with strict scientific and engineering rigor, we openly state what Money Migration Atlas does **NOT** claim to solve:
 
-Both engines implement the identical `GraphStore` interface and produce **exact parity** across all 12 benchmark cases.
-
-### Starting Neo4j (Optional)
-```bash
-# Start Neo4j 5.x container with APOC and GDS
-docker compose up -d neo4j
-```
-
-### Dynamic Backend Switching Without Restart
-Switch live between NetworkX and Neo4j at runtime via the Admin API:
-```bash
-# Inspect currently active store
-curl http://localhost:8000/api/v1/admin/active-store
-
-# Switch to Neo4j
-curl -X POST "http://localhost:8000/api/v1/admin/switch-store?backend=neo4j"
-
-# Switch back to NetworkX
-curl -X POST "http://localhost:8000/api/v1/admin/switch-store?backend=networkx"
-```
-If Neo4j is offline or unreachable, the system gracefully falls back to NetworkX without crashing.
+1. **Synthetic Data vs. Real Mainnets**: All models (XGBoost, GraphSAGE) were trained, validated, and evaluated on synthetic graph data generated by `synthetic_generator.py`. While the generator models real laundering topologies (peeling chains, mixer pools, multi-hop fanouts), real mainnets exhibit significantly higher noise, unlabelled contract interactions, and dust transactions. Retraining on ground-truth exchange-labeled clusters is required for production deployment.
+2. **Behavioral Fingerprinting is Decorative on Synthetic Data**: As rigorously audited and reported in Phase 6a, 19 of 64 behavioral dimensions showed near-zero variance ($\sigma < 0.01$) across synthetic transactions. Behavioral habit profiling requires rich, bursty mainnet transaction histories (dozens of transactions per wallet) to yield actionable forensic signal.
+3. **Adversarial Self-Play Was Deferred**: Phase 6b (Generative Adversarial Red vs. Blue laundering simulation) was deferred to post-hackathon development in favor of hardening the core GNN, consensus engine, and court evidence packaging.
+4. **SAHYOG Integration is a Mock**: The Ministry of Home Affairs SAHYOG platform is a restricted government intranet system without public sandbox APIs. Our SAHYOG router is an architectural simulation adhering to FIU-IND reporting specifications, not a production integration.
+5. **Neo4j Parity Unverified Without Docker**: The codebase includes a production Neo4j Cypher adapter (`backend/app/graph/neo4j_store.py`). However, full graph parity unit tests require a running Docker daemon (`docker compose up -d neo4j`). In environments without Docker, the platform runs seamlessly on the in-memory `NetworkXStore`.
 
 ---
 
-## 7. The Three Behavioral Signals (Phase 6a)
+## 7. Pre-Demo Checklist
 
-Traditional attribution follows money: addresses, hops, and transaction graph paths.
-**Money Migration Atlas ALSO follows human behavior.**
+Before presenting to the evaluation panel:
+- [x] Python 3.11+ environment with PyTorch Geometric and XGBoost installed.
+- [x] Node.js 18+ environment with Vite build passing (`npm run build` succeeds with zero errors).
+- [x] Backend verified with 100 automated test cases (`pytest tests/`).
+- [x] Invariant `never_blended=True` verified across all schemas and responses.
+- [x] `DEMO_MODE=true` set in backend `.env` for zero-dependency offline operation.
+- [x] Note on Neo4j: If Docker daemon is running, start Neo4j via `docker compose up -d neo4j`. If Docker is not available, the platform automatically defaults to NetworkX with zero loss of functionality.
 
-Criminal syndicates frequently discard addresses, swap intermediate wallets, and peel transactions through coin mixers (e.g., Tornado Cash, ChipMixer) to break graph linkages. However, **perpetrators cannot easily change their operational habits**.
+---
 
-Phase 6a extracts a 64-dimensional behavioral fingerprint that captures three enduring habitual dimensions:
+## 8. Academic References & Citations
 
-### 1. Timing: Inter-Hop Delay Patterns (16 Dimensions)
-- **What it captures**: Log-spaced histograms of inter-transaction latency, median transfer intervals, standard deviations, min/max wait times, and rapid-hop burst ratios ($\le 60$ seconds).
-- **Why it persists across wallet changes**: Automated scripts (bot syndicates) execute hops with predictable sub-second or fixed-interval intervals (e.g., exactly 120s or 1800s batch sweeps). Human operators display circadian sleep-wake cycles, business-hour clustering, and typical manual reaction delays. Even when transferring funds to a completely fresh address, automated or manual operational rhythms remain constant.
-
-### 2. Gas Fee: Quantization Preferences (16 Dimensions)
-- **What it captures**: Mean and median gas fees, gas fee quantization score (fraction aligned with round Gwei or round decimal increments), outlier ratios, skewness, kurtosis, and zero-fee transactions.
-- **Why it persists across wallet changes**: Wallet software, custom RPC nodes, and developer scripts possess distinct default gas setting configurations (e.g., "fast", "standard", or hardcoded gas prices like 20 Gwei). Laundering operations operating from consistent hardware, bots, or script frameworks continue to inject their default fee profiles across every newly generated intermediary wallet.
-
-### 3. Amount Structuring: Round-Number Splitting (16 Dimensions)
-- **What it captures**: Log-scaled amount moments, round-number fraction (divisible by 10, 100, 1000 or clean decimals), 5-tier denomination ratios ($<0.1$, $0.1–1$, $1–10$, $10–100$, $>100$), and output-to-input split ratios.
-- **Why it persists across wallet changes**: Peeling chains and structured smurfing follow specific syndicate liquidation policies (e.g., peeling exactly 5 ETH or 10,000 USDT increments). Smurfers systematically avoid irregular fractional outputs or adhere to predefined capital tranche quotas that persist across every peeling step before deposit.
-
-### Strict Score Separation Invariant:
-The resulting `behavioral_confidence_score` operates as a **strictly independent third signal**:
-- `proximity_rank`: Topological graph hops (how close?)
-- `confidence_score`: XGBoost tabular signals (how sure based on path structure?)
-- `gnn_confidence_score`: GNN relational embeddings (how sure based on graph topology?)
-- `behavioral_confidence_score`: Fingerprint cosine match (how sure based on habit signatures?)
-- `consensus_score = max(xgb, gnn, behavioral)`: Legitimate max-probability ensemble for final ranking.
-- All underlying raw scores remain visible and **NEVER blended**.
-
-
+1. **Graph Neural Networks for Financial Crime Detection**:
+   - Weber, M., et al. (2019). *Anti-Money Laundering in Bitcoin: Experimenting with Graph Convolutional Networks for Financial Forensics*. KDD Workshop on Applied Data Science for Healthcare and Social Good. [arXiv:1908.02591](https://arxiv.org/abs/1908.02591).
+2. **Inductive Representation Learning on Graphs**:
+   - Hamilton, W. L., Ying, R., & Leskovec, J. (2017). *Inductive Representation Learning on Large Graphs (GraphSAGE)*. Advances in Neural Information Processing Systems (NeurIPS 2017). [arXiv:1706.02216](https://arxiv.org/abs/1706.02216).
+3. **Explainable AI with Shapley Additive Explanations**:
+   - Lundberg, S. M., & Lee, S. I. (2017). *A Unified Approach to Interpreting Model Predictions (SHAP)*. Advances in Neural Information Processing Systems (NeurIPS 2017). [arXiv:1705.07874](https://arxiv.org/abs/1705.07874).
+4. **Probability Calibration for Legal Classifiers**:
+   - Niculescu-Mizil, A., & Caruana, R. (2005). *Predicting Good Probabilities With Supervised Learning*. Proceedings of the 22nd International Conference on Machine Learning (ICML).
+5. **Regulatory Framework & Lawful Interception**:
+   - Financial Intelligence Unit - India (FIU-IND), Ministry of Finance, Government of India. *Anti-Money Laundering (AML) Guidelines for Virtual Digital Asset Service Providers (VDA SPs)*, 2023.
+   - Code of Criminal Procedure, 1973 (CrPC), Section 91: *Summons to produce document or other thing*.
+   - Indian Evidence Act, 1872, Section 65B: *Admissibility of electronic records*.

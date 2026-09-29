@@ -132,3 +132,50 @@ export interface GNNModelInfoResponse {
   feature_dimensions: Record<string, number>;
   metrics: Record<string, any>;
 }
+
+export type SahyogAction = 'DISCLOSURE' | 'FREEZE_AND_DISCLOSURE';
+export type SahyogStatus = 'QUEUED' | 'ROUTED' | 'ACKNOWLEDGED';
+
+export interface SahyogTargetVasp {
+  name: string;
+  vasp_id: string;
+  fiu_registered?: boolean;
+  fiu_registration_number?: string;
+  contact_endpoint?: string;
+  response_sla_hours?: number;
+}
+
+export interface SahyogEvidenceSummary {
+  proximity_rank: number;
+  consensus_score?: number | null;
+  tier?: string;
+  tx_count: number;
+}
+
+export interface SahyogRequest {
+  request_id: string;
+  created_at: string;
+  target_vasp: SahyogTargetVasp;
+  suspect_wallet: string;
+  chain: string;
+  requested_action: SahyogAction;
+  evidence_summary: SahyogEvidenceSummary;
+  attached_evidence_id: string;
+  status: SahyogStatus;
+  disclaimer: string;
+  is_mock: boolean;
+  production_endpoint: string;
+}
+
+export interface VaspRegistryItem {
+  vasp_id: string;
+  vasp_name: string;
+  legal_entity: string;
+  fiu_ind_registered: boolean;
+  fiu_registered?: boolean;
+  registration_number: string;
+  contact_email: string;
+  response_sla_hours: number;
+  jurisdiction: string;
+}
+

@@ -6,6 +6,8 @@ import {
   GNNModelInfoResponse,
   EvidencePackage,
   Chain,
+  SahyogRequest,
+  VaspRegistryItem,
 } from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
@@ -57,4 +59,32 @@ export const api = {
     const res = await apiClient.get<GNNModelInfoResponse>('/api/v1/gnn/model-info');
     return res.data;
   },
+
+  submitSahyogRequest: async (
+    chain: Chain | string,
+    address: string,
+    action: 'DISCLOSURE' | 'FREEZE_AND_DISCLOSURE' = 'DISCLOSURE'
+  ): Promise<SahyogRequest> => {
+    const res = await apiClient.post<SahyogRequest>(
+      `/api/v1/sahyog/request/${chain}/${address}`,
+      { requested_action: action }
+    );
+    return res.data;
+  },
+
+  getSahyogStatus: async (requestId: string): Promise<SahyogRequest> => {
+    const res = await apiClient.get<SahyogRequest>(`/api/v1/sahyog/status/${requestId}`);
+    return res.data;
+  },
+
+  getSahyogRequests: async (): Promise<SahyogRequest[]> => {
+    const res = await apiClient.get<SahyogRequest[]>('/api/v1/sahyog/requests');
+    return res.data;
+  },
+
+  getSahyogVaspRegistry: async (): Promise<{ vasps: VaspRegistryItem[]; disclaimer: string }> => {
+    const res = await apiClient.get<{ vasps: VaspRegistryItem[]; disclaimer: string }>('/api/v1/sahyog/vasp-registry');
+    return res.data;
+  },
 };
+

@@ -1,0 +1,117 @@
+{
+  "disclaimer": "MOCK DATA — NOT FOR PRODUCTION USE",
+  "authority": "Financial Intelligence Unit - India (FIU-IND) / Ministry of Home Affairs (MHA) SAHYOG Portal",
+  "registry_version": "2026.09-MOCK",
+  "vasps": [
+    {
+      "vasp_id": "coindcx",
+      "vasp_name": "CoinDCX",
+      "legal_entity": "Neblio Technologies Pvt. Ltd.",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00142",
+      "contact_email": "compliance-law@coindcx.com",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/coindcx",
+      "response_sla_hours": 24,
+      "jurisdiction": "India",
+      "compliance_officer": "Nodal Officer (Law Enforcement Inquiries)"
+    },
+    {
+      "vasp_id": "wazirx",
+      "vasp_name": "WazirX",
+      "legal_entity": "Zanmai Labs Pvt. Ltd.",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00098",
+      "contact_email": "nodal-lea@wazirx.com",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/wazirx",
+      "response_sla_hours": 24,
+      "jurisdiction": "India",
+      "compliance_officer": "Compliance & Investigation Cell"
+    },
+    {
+      "vasp_id": "zebpay",
+      "vasp_name": "ZebPay",
+      "legal_entity": "Awlencan Innovations India Ltd.",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00211",
+      "contact_email": "regulatory-desk@zebpay.com",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/zebpay",
+      "response_sla_hours": 24,
+      "jurisdiction": "India",
+      "compliance_officer": "Chief Compliance Officer"
+    },
+    {
+      "vasp_id": "coinswitch",
+      "vasp_name": "CoinSwitch",
+      "legal_entity": "Bitcipher Labs LLP",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00045",
+      "contact_email": "law-enforcement@coinswitch.co",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/coinswitch",
+      "response_sla_hours": 24,
+      "jurisdiction": "India",
+      "compliance_officer": "Head of Financial Crime Compliance"
+    },
+    {
+      "vasp_id": "mudrex",
+      "vasp_name": "Mudrex",
+      "legal_entity": "Mudrex Financial Services India Pvt. Ltd.",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00318",
+      "contact_email": "investigations@mudrex.com",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/mudrex",
+      "response_sla_hours": 36,
+      "jurisdiction": "India",
+      "compliance_officer": "Director of Regulatory Affairs"
+    },
+    {
+      "vasp_id": "unocoin",
+      "vasp_name": "Unocoin",
+      "legal_entity": "Unocoin Technologies Pvt. Ltd.",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00019",
+      "contact_email": "fiu-requests@unocoin.com",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/unocoin",
+      "response_sla_hours": 48,
+      "jurisdiction": "India",
+      "compliance_officer": "Anti-Money Laundering Officer"
+    },
+    {
+      "vasp_id": "giottus",
+      "vasp_name": "Giottus",
+      "legal_entity": "Giottus Technologies Pvt. Ltd.",
+      "fiu_ind_registered": true,
+      "registration_number": "FIU-IND/VASP/2023/00187",
+      "contact_email": "legal-compliance@giottus.com",
+      "sahyog_routing_endpoint": "https://sahyog.gov.in/api/v1/routing/giottus",
+      "response_sla_hours": 48,
+      "jurisdiction": "India",
+      "compliance_officer": "Chief Regulatory & AML Officer"
+    },
+    {
+      "vasp_id": "binance_offshore",
+      "vasp_name": "Binance (Offshore)",
+      "legal_entity": "Binance Holdings Ltd. (Cayman/Seychelles)",
+      "fiu_ind_registered": false,
+      "registration_number": null,
+      "contact_email": "lea-global@binance.com",
+      "sahyog_routing_endpoint": null,
+      "notice_required": true,
+      "estimated_response": "unknown",
+      "jurisdiction": "Offshore",
+      "notes": "Requires Mutual Legal Assistance Treaty (MLAT) or Letter Rogatory"
+    },
+    {
+      "vasp_id": "bybit",
+      "vasp_name": "Bybit",
+      "legal_entity": "Bybit Fintech Ltd. (UAE / BVI)",
+      "fiu_ind_registered": false,
+      "registration_number": null,
+      "contact_email": "compliance@bybit.com",
+      "sahyog_routing_endpoint": null,
+      "notice_required": true,
+      "estimated_response": "unknown",
+      "jurisdiction": "Offshore",
+      "notes": "Non-compliant offshore exchange requiring Interpol / diplomatic channel notice"
+    }
+  ]
+}

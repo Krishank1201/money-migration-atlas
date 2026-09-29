@@ -2,8 +2,9 @@
 Evidence Chain Formatter & Court Package Builder (Phase 7).
 Money Migration Atlas (SIH26182).
 
-Constructs court-admissible forensic evidence packages including deterministic
-audit trails, chain-of-custody tracking, feature attributions, and markdown briefs.
+Constructs court-ready forensic evidence packages formatted for Section 91 CrPC disclosure
+(not a certification), including deterministic audit trails, chain-of-custody tracking,
+feature attributions, and markdown briefs.
 """
 
 from datetime import datetime, timezone
@@ -141,7 +142,7 @@ class EvidenceChainBuilder:
     @staticmethod
     def to_markdown(package: EvidencePackage) -> str:
         """
-        Renders the EvidencePackage into an official, court-admissible forensic legal brief.
+        Renders the EvidencePackage into a court-ready dossier formatted for Section 91 CrPC disclosure (not a certification).
         """
         cand = package.top_candidate
         fiu_status = "REGISTERED (Indian FIU Reporting Entity)" if cand.get("fiu_ind_registered") else "NON-COMPLIANT / OFFSHORE"
@@ -154,6 +155,7 @@ class EvidenceChainBuilder:
 
         md_lines = [
             f"# FORENSIC EVIDENCE DOSSIER: ON-CHAIN ASSET ATTRIBUTION",
+            f"**Notice:** Court-ready dossier formatted for Section 91 CrPC disclosure (not a certification)",
             f"**Case Reference:** MMA-EVD-{package.suspect_wallet[:8].upper()}",
             f"**Generated:** {package.generated_at}",
             f"**Integrity Asserted:** `never_blended=True` (Strict Score Independence)",
@@ -179,8 +181,9 @@ class EvidenceChainBuilder:
             f"| **Behavioral Habit** | 64-dim Fingerprint Cosine Sim | {beh_conf} | Habit Match | Strictly Unblended |",
             f"| **Consensus State** | Multi-Model Agreement Engine | **{cons_score}** | **{cons_tier}** | Categorical Evaluation |",
             "",
-            "> **LEGAL CERTIFICATION:** Proximity distance and predictive confidence scores are maintained as distinct,",
-            "> non-blended parameters in accordance with algorithmic evidence admissibility standards.",
+            "> **LEGAL SPECIFICATION:** Court-ready dossier (not a certification). Proximity distance and predictive confidence",
+            "> scores are maintained as distinct, non-blended parameters in accordance with algorithmic evidence disclosure standards.",
+            "> Dossier formatted for Section 91 CrPC disclosure.",
             "",
             "---",
             "",

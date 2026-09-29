@@ -131,6 +131,8 @@ def generate_counterfactuals(
             mixer_addr = None
 
     c_score = candidate.consensus_score or candidate.confidence_score or 0.50
+    xgb_str = f"{candidate.confidence_score:.2f}" if candidate.confidence_score is not None else "N/A"
+    gnn_str = f"{candidate.gnn_confidence_score:.2f}" if candidate.gnn_confidence_score is not None else "N/A"
 
     # Emit mixer-removal counterfactual ONLY if a verified intermediate mixer exists
     if has_mixer and mixer_addr and suspect_addr:
@@ -143,24 +145,25 @@ def generate_counterfactuals(
         if recomputed_score > c_score:
             cf_text = (
                 f"If the path had not touched mixer {mixer_addr[:10]}..., "
-                f"confidence would rise from {c_score:.2f} to {recomputed_score:.2f}."
+                f"consensus score would rise from {c_score:.2f} to {recomputed_score:.2f} (GNN {gnn_str} / XGB {xgb_str})."
             )
         elif recomputed_score < c_score:
             cf_text = (
                 f"If the path had not touched mixer {mixer_addr[:10]}..., "
-                f"confidence would shift from {c_score:.2f} to {recomputed_score:.2f}."
+                f"consensus score would shift from {c_score:.2f} to {recomputed_score:.2f} (GNN {gnn_str} / XGB {xgb_str})."
             )
         else:
             cf_text = (
                 f"If the path had not touched mixer {mixer_addr[:10]}..., "
-                f"confidence would remain at {recomputed_score:.2f} as other topological signals dominate."
+                f"consensus score would remain at {recomputed_score:.2f} (GNN {gnn_str} / XGB {xgb_str}) as non-mixer structural signals dominate."
             )
 
         counterfactuals.append(
             CounterfactualItem(
                 text=cf_text,
                 provenance="recomputed",
-                method="ConsensusScorer re-evaluation without mixer node"
+                method="ConsensusScorer re-evaluation without mixer node",
+                signal_source="consensus"
             )
         )
 
@@ -173,11 +176,12 @@ def generate_counterfactuals(
             counterfactuals.append(
                 CounterfactualItem(
                     text=(
-                        f"If XGBoost alone made this decision, it would attribute to {xgb_best.vasp_name} "
+                        f"If XGBoost tabular model alone made this decision, it would attribute to {xgb_best.vasp_name} "
                         f"({xgb_best.confidence_score:.2f}), whereas consensus selected {candidate.vasp_name}."
                     ),
                     provenance="recomputed",
-                    method="XGBoost tabular decision boundary isolation"
+                    method="XGBoost tabular decision boundary isolation",
+                    signal_source="xgb"
                 )
             )
         elif gnn_best.vasp_id != candidate.vasp_id and (gnn_best.gnn_confidence_score or 0) > 0.30:
@@ -188,7 +192,8 @@ def generate_counterfactuals(
                         f"({gnn_best.gnn_confidence_score:.2f}) over {candidate.vasp_name}."
                     ),
                     provenance="recomputed",
-                    method="GNN graph-structural message-passing isolation"
+                    method="GNN graph-structural message-passing isolation",
+                    signal_source="gnn"
                 )
             )
         else:
@@ -200,7 +205,8 @@ def generate_counterfactuals(
                         f"scored below 0.60, consensus tier would downgrade from {candidate.consensus_tier.value if candidate.consensus_tier else 'CURRENT'} to UNCERTAIN."
                     ),
                     provenance="recomputed",
-                    method="Multi-model consensus agreement threshold sensitivity"
+                    method="Multi-model consensus agreement threshold sensitivity",
+                    signal_source="consensus"
                 )
             )
 
@@ -219,10 +225,11 @@ def generate_counterfactuals(
                 CounterfactualItem(
                     text=(
                         f"If the suspect wallet had reached {runner_up.vasp_name} at {candidate.proximity_rank} hops "
-                        f"instead of {runner_up.proximity_rank}, attribution would shift toward {runner_up.vasp_name}."
+                        f"instead of {runner_up.proximity_rank}, proximity attribution would shift toward {runner_up.vasp_name}."
                     ),
                     provenance="qualitative",
-                    method="Topological shortest-path graph traversal distance sensitivity"
+                    method="Topological shortest-path graph traversal distance sensitivity",
+                    signal_source="proximity"
                 )
             )
         elif runner_up.proximity_rank < candidate.proximity_rank:
@@ -230,10 +237,11 @@ def generate_counterfactuals(
                 CounterfactualItem(
                     text=(
                         f"If {candidate.vasp_name} were reachable in {runner_up.proximity_rank} hops rather than "
-                        f"{candidate.proximity_rank}, proximity ranking would match {runner_up.vasp_name}."
+                        f"{candidate.proximity_rank}, topological proximity ranking would match {runner_up.vasp_name}."
                     ),
                     provenance="qualitative",
-                    method="Topological shortest-path graph traversal distance sensitivity"
+                    method="Topological shortest-path graph traversal distance sensitivity",
+                    signal_source="proximity"
                 )
             )
         else:
@@ -244,7 +252,8 @@ def generate_counterfactuals(
                         f"topological proximity would tilt attribution toward {runner_up.vasp_name}."
                     ),
                     provenance="qualitative",
-                    method="Topological shortest-path graph traversal distance sensitivity"
+                    method="Topological shortest-path graph traversal distance sensitivity",
+                    signal_source="proximity"
                 )
             )
     else:
@@ -255,7 +264,8 @@ def generate_counterfactuals(
                     f"multi-hop decay would have substantially suppressed confidence."
                 ),
                 provenance="qualitative",
-                method="Topological shortest-path graph traversal distance sensitivity"
+                method="Topological shortest-path graph traversal distance sensitivity",
+                signal_source="proximity"
             )
         )
 

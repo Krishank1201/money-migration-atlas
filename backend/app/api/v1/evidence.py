@@ -63,7 +63,7 @@ async def get_evidence_package(
     max_hops: int = Query(6, ge=1, le=8, description="Maximum graph traversal depth")
 ):
     """
-    Assembles and exports a certified evidence dossier for the suspect wallet.
+    Assembles and exports a court-ready evidence dossier formatted for Section 91 CrPC disclosure (not a certification).
     Returns JSON object or Markdown legal brief.
     """
     store = get_store()

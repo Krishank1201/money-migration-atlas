@@ -8,6 +8,7 @@ import { ExplanationPanel } from '../components/ExplanationPanel';
 import { CounterfactualPanel } from '../components/CounterfactualPanel';
 import { ChainOfCustody } from '../components/ChainOfCustody';
 import { EvidencePanel } from '../components/EvidencePanel';
+import { SahyogPanel } from '../components/SahyogPanel';
 import { DataSourceBadge } from '../components/DataSourceBadge';
 import { copyToClipboard } from '../utils/format';
 import { Copy, Check, ArrowLeft, Loader2, Cpu, Network, ShieldCheck, AlertCircle } from 'lucide-react';
@@ -223,6 +224,13 @@ export const InvestigationPage: React.FC<InvestigationPageProps> = ({
         {/* Chain of Custody Timeline */}
         <ChainOfCustody steps={report.evidence_package.chain_of_custody} />
       </div>
+
+      {/* Route to SAHYOG Panel */}
+      <SahyogPanel
+        candidate={candidateExplanations[selectedCandidateIdx]?.candidate || null}
+        suspectWallet={report.suspect_wallet}
+        chain={report.chain}
+      />
 
       {/* Court Brief Download Bar */}
       <EvidencePanel

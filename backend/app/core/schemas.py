@@ -313,6 +313,7 @@ class CounterfactualItem(BaseModel):
     text: str
     provenance: str = Field(..., description="'recomputed' | 'estimated_shap' | 'qualitative'")
     method: str
+    signal_source: Optional[str] = Field(default="consensus", description="'consensus' | 'xgb' | 'gnn' | 'proximity'")
 
     def __str__(self) -> str:
         return self.text
@@ -390,4 +391,47 @@ class InvestigationReport(BaseModel):
         if not v:
             raise ValueError("Invariant violated: proximity_rank and confidence_score must NEVER be blended.")
         return True
+
+
+class SahyogTargetVasp(BaseModel):
+    name: str
+    vasp_id: str
+    fiu_registered: bool = True
+    fiu_registration_number: Optional[str] = None
+    contact_endpoint: Optional[str] = None
+    response_sla_hours: Optional[int] = 24
+
+
+class SahyogEvidenceSummary(BaseModel):
+    proximity_rank: int
+    consensus_score: Optional[float] = None
+    tier: Optional[str] = None
+    tx_count: int = 0
+
+
+class SahyogAction(str, Enum):
+    DISCLOSURE = "DISCLOSURE"
+    FREEZE_AND_DISCLOSURE = "FREEZE_AND_DISCLOSURE"
+
+
+class SahyogStatus(str, Enum):
+    QUEUED = "QUEUED"
+    ROUTED = "ROUTED"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+
+
+class SahyogRequest(BaseModel):
+    request_id: str
+    created_at: str
+    target_vasp: SahyogTargetVasp
+    suspect_wallet: str
+    chain: str = "ETH"
+    requested_action: SahyogAction
+    evidence_summary: SahyogEvidenceSummary
+    attached_evidence_id: str
+    status: SahyogStatus = SahyogStatus.QUEUED
+    disclaimer: str = "MOCK INTEGRATION — NOT CONNECTED TO REAL SAHYOG PORTAL"
+    is_mock: bool = True
+    production_endpoint: str = "https://sahyog.gov.in (would be used in production)"
+
 

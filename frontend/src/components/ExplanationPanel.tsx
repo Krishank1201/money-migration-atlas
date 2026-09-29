@@ -26,7 +26,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
     actionConfig = {
       bg: 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300',
       icon: Send,
-      label: 'PROCEED: SEND FIU-IND / SECTION 91 CRPC DISCLOSURE REQUEST',
+      label: 'PROCEED: ROUTE DOSSIER FOR SECTION 91 CRPC DISCLOSURE VIA SAHYOG',
     };
   } else if (recommendedAction === 'INSUFFICIENT_SIGNAL') {
     actionConfig = {

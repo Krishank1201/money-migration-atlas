@@ -43,8 +43,9 @@ export const EvidencePanel: React.FC<EvidencePanelProps> = ({
         <div className="flex items-center gap-2">
           <FileCheck className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold tracking-wide text-slate-200 uppercase font-mono">
-            Court-Admissible Evidence Dossier
+            Court-Ready Dossier (Section 91 CrPC Disclosure)
           </h2>
+          <span className="text-[10px] font-mono text-slate-500">(not a certification)</span>
         </div>
 
         <button
