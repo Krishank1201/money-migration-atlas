@@ -55,14 +55,17 @@ class Settings(BaseSettings):
     ML_CONFIDENCE_LOW_THRESHOLD: float = 0.25
 
     # Agentic & LLM Configuration (Phase 7)
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
     ANTHROPIC_API_KEY: Optional[str] = None
-    LLM_TIMEOUT_SECONDS: int = 5
-    LLM_MODEL: str = "claude-sonnet-4-5"
+    LLM_TIMEOUT_SECONDS: int = 10
+    LLM_MODEL: str = "llama-3.3-70b-versatile"
     LLM_MAX_TOKENS: int = 400
     LLM_FALLBACK_ENABLED: bool = True
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )

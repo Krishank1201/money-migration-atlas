@@ -23,6 +23,16 @@ from app.ml.consensus import ConsensusScorer
 from app.main import app
 
 
+from app.config import get_settings
+
+
+@pytest.fixture(autouse=True)
+def prevent_real_network_calls_in_tests(monkeypatch):
+    """Ensure tests never make real external network calls to Groq."""
+    settings = get_settings()
+    monkeypatch.setattr(settings, "GROQ_API_KEY", None)
+
+
 @pytest.fixture(scope="module")
 def populated_store():
     vasps, wallets, txs, cases = generate_synthetic_data(seed=42)
@@ -53,11 +63,31 @@ def test_llm_client_falls_back_without_api_key():
     assert "3 hops" in exp
 
 
-def test_llm_client_returns_data_source_flag():
-    client = LLMClient(api_key=None)
+def test_llm_client_data_source_flag_has_groq_value(httpx_mock):
+    httpx_mock.add_response(
+        url="https://api.groq.com/openai/v1/chat/completions",
+        json={
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            "The suspect funds terminate at WazirX within 2 hops with an overall consensus score "
+                            "of 0.85 (Tier: CONFIRMED). Both XGBoost and GNN models strongly corroborate attribution. "
+                            "Topological proximity and predictive confidence remain strictly unblended. If the path "
+                            "traversed 2 more hops, confidence would degrade."
+                        )
+                    }
+                }
+            ]
+        },
+        status_code=200
+    )
+    client = LLMClient(api_key="gsk_mock_test_key")
     data = {"vasp_name": "WazirX", "proximity_rank": 2, "consensus_score": 0.85, "consensus_tier": "CONFIRMED"}
-    _, source = client.generate_explanation(data)
-    assert source in ("llm", "template_fallback")
+    exp, source = client.generate_explanation(data)
+    assert source == "groq"
+    assert "WazirX" in exp
+    assert len(exp) > 30
 
 
 def test_template_fallback_produces_valid_explanation():
@@ -213,7 +243,7 @@ def test_investigation_report_has_all_fields(populated_store):
     assert report.suspect_wallet == c2.suspect_wallet
     assert report.chain == Chain.ETH
     assert len(report.plain_language_summary) > 50
-    assert report.data_source in ("llm", "template_fallback")
+    assert report.data_source in ("groq", "template_fallback")
     assert len(report.top_3_candidates) > 0
     assert len(report.counterfactuals) > 0
     assert report.evidence_package is not None

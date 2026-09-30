@@ -3,42 +3,46 @@ LLM Client with Deterministic Template Fallback (Phase 7).
 Money Migration Atlas (SIH26182).
 
 Converts mathematical attribution signals into plain-language forensic narratives.
-Supports Anthropic Claude API with automatic timeout, rate-limit, and missing-key fallback.
+Supports Groq API (Llama 3.3 70B) with automatic timeout, rate-limit, and missing-key fallback.
 """
 
 import json
 import logging
 from typing import Dict, Any, Optional, Tuple
 
+import httpx
+
 from app.config import get_settings
-from app.core.schemas import ExplanationResponse
 
 logger = logging.getLogger("mma.agentic.llm_client")
 
+_DEFAULT_KEY = object()
 
-CLAUDE_PROMPT_TEMPLATE = """You are a crypto forensics analyst. Write a 3-5 sentence plain-language explanation for an investigator. Rules:
+GROQ_SYSTEM_PROMPT = """You are a crypto forensics analyst. Write a 3-5 sentence plain-language explanation for an investigator. Rules:
 - Cite specific scores (proximity, XGB, GNN, consensus tier)
 - Name VASPs by their real name (CoinDCX, WazirX, etc.)
 - If models disagree, say so explicitly
 - If any signal is UNKNOWN or INSUFFICIENT_DATA, mention it
 - Do NOT speculate beyond the evidence provided
 - Do NOT blend proximity and confidence
-- End with one counterfactual sentence
-
-Evidence: {structured_json}"""
+- End with one counterfactual sentence"""
 
 
 class LLMClient:
     """
-    Forensic narrative generator utilizing Anthropic Claude when configured,
+    Forensic narrative generator utilizing Groq (Llama 3.3 70B) when configured,
     with an offline-first deterministic template fallback.
     """
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Any = _DEFAULT_KEY):
         settings = get_settings()
-        self.api_key = api_key or settings.ANTHROPIC_API_KEY
+        if api_key is _DEFAULT_KEY:
+            self.api_key = settings.GROQ_API_KEY
+        else:
+            self.api_key = api_key
+        self.base_url = settings.GROQ_BASE_URL
+        self.model = settings.GROQ_MODEL
         self.timeout = settings.LLM_TIMEOUT_SECONDS
-        self.model = settings.LLM_MODEL
         self.max_tokens = settings.LLM_MAX_TOKENS
         self.fallback_enabled = settings.LLM_FALLBACK_ENABLED
 
@@ -49,43 +53,61 @@ class LLMClient:
     ) -> Tuple[str, str]:
         """
         Generates 3-5 sentence plain-language attribution explanation.
-        Returns: (explanation_text, data_source: "llm" | "template_fallback")
+        Returns: (explanation_text, data_source: "groq" | "template_fallback")
         """
         context = context or {}
+        if not self.api_key or not str(self.api_key).strip():
+            return self._generate_template_fallback(candidate_data, context), "template_fallback"
+
         combined_payload = {**candidate_data, "context": context}
 
-        if self.api_key and not settings_disabled():
-            try:
-                explanation = self._call_anthropic(combined_payload)
-                if explanation and len(explanation.strip()) > 30:
-                    return explanation.strip(), "llm"
-            except Exception as e:
-                logger.warning("Anthropic Claude API call failed (%s); invoking fallback.", e)
+        try:
+            explanation = self._call_groq(combined_payload)
+            if explanation and len(explanation.strip()) > 30:
+                return explanation.strip(), "groq"
+        except Exception as e:
+            logger.warning("Groq API call failed (%s); invoking fallback.", e)
 
         # Template fallback
         return self._generate_template_fallback(candidate_data, context), "template_fallback"
 
-    def _call_anthropic(self, payload: Dict[str, Any]) -> Optional[str]:
-        """Calls Anthropic Messages API with strict timeout."""
-        try:
-            import anthropic  # type: ignore
-        except ImportError:
-            logger.info("anthropic package not installed; falling back to template generator.")
+    def _call_groq(self, payload: Dict[str, Any]) -> Optional[str]:
+        """Calls Groq Chat Completions API with strict timeout."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        user_content = f"Evidence: {json.dumps(payload, indent=2, default=str)}"
+        endpoint = f"{self.base_url.rstrip('/')}/chat/completions"
+
+        models_to_try = [self.model]
+        for alt_model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
+            if alt_model not in models_to_try:
+                models_to_try.append(alt_model)
+
+        with httpx.Client(timeout=self.timeout) as client:
+            for model_name in models_to_try:
+                body = {
+                    "model": model_name,
+                    "messages": [
+                        {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+                        {"role": "user", "content": user_content},
+                    ],
+                    "max_tokens": self.max_tokens,
+                    "temperature": 0.3,
+                }
+                response = client.post(endpoint, json=body, headers=headers)
+                if response.status_code == 404:
+                    # Model not accessible under this key tier, try next available model on Groq
+                    continue
+                response.raise_for_status()
+                res_json = response.json()
+                choices = res_json.get("choices", [])
+                if choices and len(choices) > 0:
+                    content = choices[0].get("message", {}).get("content", "")
+                    if content:
+                        return content.strip()
             return None
-
-        prompt = CLAUDE_PROMPT_TEMPLATE.format(
-            structured_json=json.dumps(payload, indent=2, default=str)
-        )
-
-        client = anthropic.Anthropic(api_key=self.api_key, timeout=self.timeout)
-        message = client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        if message.content and len(message.content) > 0:
-            return message.content[0].text
-        return None
 
     def _generate_template_fallback(
         self,

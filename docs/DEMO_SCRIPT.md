@@ -51,7 +51,7 @@
 ### [01:15 – 02:00] Plain-Language Explanations & Quantitative Counterfactuals
 - **Spoken:**
   > "A forensic investigator does not present raw tensor logits to a magistrate; they require plain-language prose with mathematical provenance.
-  > Below the graph, our Agentic Explainer summarizes the transaction flight in human terms, supported by SHAP feature attributions."
+  > Below the graph, our Agentic Explainer (powered by Groq Llama 3.3 70B with deterministic fallback) summarizes the transaction flight in human terms, supported by SHAP feature attributions."
 
 - **Action:**
   - Scroll down to the **Plain-Language Summary** and the **Forensic Counterfactuals** panel.

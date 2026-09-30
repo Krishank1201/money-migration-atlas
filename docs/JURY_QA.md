@@ -60,7 +60,7 @@
 
 ### Q10: What is your infrastructure and computing cost at scale?
 **Answer (30s):**
-> "Runs on CPU-only commodity hardware — no GPU required. Inference completes in interactive time on standard forensic workstations. This is a design goal, not a benchmarked claim; production latency would be validated during a state police pilot."
+> "Runs on CPU-only commodity hardware — no GPU required. Core graph and ML models run locally, while the plain-language explanation layer leverages Groq Llama 3.3 70B for ultra-fast, cost-effective inference with an offline deterministic template fallback. Inference completes in interactive time on standard forensic workstations. This is a design goal, not a benchmarked claim; production latency would be validated during a state police pilot."
 
 ---
 
@@ -102,7 +102,7 @@
 
 ### Q17: What is the purpose of quantitative counterfactuals in your explanations?
 **Answer (30s):**
-> "A counterfactual answers: *'What would have to change in the transaction for the attribution to switch?'* For example, our engine recomputes: *'If flow volume dropped below 5,000 USDT, XGBoost confidence would fall from 0.86 to 0.41.'* This proves to defense counsel and judges that the model relies on significant financial indicators rather than arbitrary spurious correlations."
+> "A counterfactual answers: *'What would have to change in the transaction for the attribution to switch?'* For example, our engine recomputes: *'If flow volume dropped below 5,000 USDT, XGBoost confidence would fall from 0.86 to 0.41.'* This proves to defense counsel and judges that the model relies on significant financial indicators rather than arbitrary spurious correlations. The forensic narrative synthesized by Groq Llama 3.3 70B directly embeds these counterfactual bounds and SHAP explanations into court-ready prose with an offline deterministic fallback."
 
 ---
 
