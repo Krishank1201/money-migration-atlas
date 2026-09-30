@@ -27,8 +27,8 @@ _forensic_agent: Optional[ForensicAgent] = None
 def set_agentic_context(store: GraphStore):
     global _current_graph_store, _forensic_agent
     _current_graph_store = store
-    _forensic_agent = ForensicAgent()
-    logger.info("Agentic API context initialized.")
+    _forensic_agent = None
+    logger.info("Agentic API context initialized (lazy loading enabled).")
 
 
 def get_agent() -> ForensicAgent:

@@ -42,8 +42,19 @@ class ConsensusScorer:
         behavioral_attributor: Optional[BehavioralAttributor] = None
     ):
         self.xgb_predictor = xgb_predictor or VASPConfidencePredictor()
-        self.gnn_predictor = gnn_predictor or GNNVASPConfidencePredictor()
+        self._gnn_predictor = gnn_predictor
         self.behavioral_attributor = behavioral_attributor
+
+    @property
+    def gnn_predictor(self) -> GNNVASPConfidencePredictor:
+        if self._gnn_predictor is None:
+            from app.main import get_gnn_predictor
+            self._gnn_predictor = get_gnn_predictor()
+        return self._gnn_predictor
+
+    @gnn_predictor.setter
+    def gnn_predictor(self, value: Optional[GNNVASPConfidencePredictor]):
+        self._gnn_predictor = value
 
     @staticmethod
     def determine_consensus_tier(

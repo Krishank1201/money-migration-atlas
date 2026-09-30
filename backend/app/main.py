@@ -32,6 +32,17 @@ neo4j_store: Neo4jStore = None
 fetch_orchestrator: FetchOrchestrator = None
 benchmark_cases = []
 
+# Module-level lazy GNN predictor loader
+_gnn_predictor = None
+
+
+def get_gnn_predictor():
+    global _gnn_predictor
+    if _gnn_predictor is None:
+        from app.ml.gnn.predictor import GNNVASPConfidencePredictor
+        _gnn_predictor = GNNVASPConfidencePredictor()
+    return _gnn_predictor
+
 
 def on_store_switched(new_store: GraphStore):
     """Callback triggered by admin router when graph store is switched."""

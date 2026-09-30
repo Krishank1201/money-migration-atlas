@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     NEO4J_FALLBACK_TO_NETWORKX: bool = True
     GRAPH_DEFAULT_HOPS: int = 3
     GRAPH_MAX_HOPS: int = 8
+    GRAPH_SCALE_FACTOR: float = 1.0
 
     # Blockchain Provider API Keys
     ETHERSCAN_API_KEY: Optional[str] = None

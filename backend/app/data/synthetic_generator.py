@@ -14,6 +14,7 @@ from app.core.schemas import (
     LaunderingPattern
 )
 from app.graph.store import GraphStore
+from app.config import get_settings
 from collections import namedtuple
 
 
@@ -484,7 +485,12 @@ class SyntheticDataGenerator:
         self._build_benchmark_case_104_cross_chain_tie()
 
         # 4. Generate background network of normal & suspicious activity
-        self._generate_background_traffic(target_wallets=550, target_txs=2200)
+        # CRITICAL: The 12 benchmark cases above remain fixed with full paths and ground truth intact.
+        # Only background/noise wallets and transactions are scaled by GRAPH_SCALE_FACTOR.
+        scale_factor = get_settings().GRAPH_SCALE_FACTOR
+        target_wallets = int(550 * scale_factor)
+        target_txs = int(2200 * scale_factor)
+        self._generate_background_traffic(target_wallets=target_wallets, target_txs=target_txs)
 
         return SyntheticDataset(
             list(self.vasps.values()),
@@ -1032,8 +1038,13 @@ class SyntheticDataGenerator:
     # Background Traffic Generation (500+ Wallets, 2000+ Transactions)
     # -------------------------------------------------------------------------
 
-    def _generate_background_traffic(self, target_wallets: int = 550, target_txs: int = 2200):
+    def _generate_background_traffic(self, target_wallets: Optional[int] = None, target_txs: Optional[int] = None):
         """Creates hundreds of realistic wallets and interconnecting transactions."""
+        scale_factor = get_settings().GRAPH_SCALE_FACTOR
+        if target_wallets is None:
+            target_wallets = int(550 * scale_factor)
+        if target_txs is None:
+            target_txs = int(2200 * scale_factor)
         chains = [Chain.BTC, Chain.ETH, Chain.TRON_TRC20]
         
         # 1. Create background trader/user wallets

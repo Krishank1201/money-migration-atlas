@@ -45,9 +45,9 @@ def set_gnn_context(store: GraphStore, test_cases: List[GroundTruthTestCase]):
     global _current_graph_store, _benchmark_cases, _gnn_predictor, _consensus_scorer
     _current_graph_store = store
     _benchmark_cases = test_cases
-    _gnn_predictor = GNNVASPConfidencePredictor()
-    _consensus_scorer = ConsensusScorer(gnn_predictor=_gnn_predictor)
-    logger.info("GNN API context initialized: ready=%s", _gnn_predictor.is_ready())
+    _gnn_predictor = None
+    _consensus_scorer = None
+    logger.info("GNN API context initialized (lazy loading enabled)")
 
 
 def get_store() -> GraphStore:
@@ -59,7 +59,8 @@ def get_store() -> GraphStore:
 def get_gnn_predictor() -> GNNVASPConfidencePredictor:
     global _gnn_predictor
     if _gnn_predictor is None:
-        _gnn_predictor = GNNVASPConfidencePredictor()
+        from app.main import get_gnn_predictor as _main_get_gnn_predictor
+        _gnn_predictor = _main_get_gnn_predictor()
     return _gnn_predictor
 
 

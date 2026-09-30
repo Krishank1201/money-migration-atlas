@@ -69,8 +69,8 @@ def _recompute_without_mixer(
 
         # Optional GNN score extraction for consensus
         try:
-            from app.ml.gnn.predictor import GNNVASPConfidencePredictor
-            gnn_pred = GNNVASPConfidencePredictor()
+            from app.main import get_gnn_predictor
+            gnn_pred = get_gnn_predictor()
             gnn_cands = gnn_pred.predict(suspect_wallet, store)
             gnn_map = {c.vasp_id: c.gnn_confidence_score for c in gnn_cands if c.gnn_confidence_score is not None}
             gnn_conf = gnn_map.get(candidate_vasp_id, 0.0)
